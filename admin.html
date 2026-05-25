@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="format-detection" content="telephone=no">
+<title>花甜 · 管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --green: #7A9E7E;
+  --green-light: #E8F0E6;
+  --green-dark: #5A7E5E;
+  --cream: #FDF8F2;
+  --cream-dark: #F5EDE0;
+  --blush: #F0D0C8;
+  --coral: #E8A090;
+  --red: #E07060;
+  --brown: #8B7355;
+  --text: #3D3D3D;
+  --text-light: #8A8A8A;
+  --text-lighter: #B5B5B5;
+  --white: #FFFFFF;
+  --shadow: 0 2px 12px rgba(122, 158, 126, 0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+input, textarea, select, button { font-family: inherit; }
+
+/* Login Screen */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+}
+
+.login-icon {
+  width: 72px;
+  height: 72px;
+  background: var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: white;
+}
+
+.login-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--green-dark);
+  margin-bottom: 4px;
+}
+
+.login-sub {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-bottom: 32px;
+}
+
+.login-form { width: 100%; max-width: 320px; }
+
+.login-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  background: var(--white);
+  color: var(--text);
+  outline: none;
+  transition: var(--transition);
+  -webkit-appearance: none;
+}
+
+.login-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(122, 158, 126, 0.15); }
+
+.login-error {
+  color: var(--red);
+  font-size: 13px;
+  margin-top: 8px;
+  display: none;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.login-btn:active { transform: scale(0.98); background: var(--green-dark); }
+
+/* Admin layout */
+.admin-screen { display: none; }
+.admin-screen.active { display: block; }
+
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(253, 248, 242, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(122, 158, 126, 0.1);
+}
+
+.admin-header-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--cream-dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 16px;
+  transition: var(--transition);
+}
+
+.admin-back:active { background: var(--blush); }
+
+.admin-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-logout {
+  padding: 6px 16px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: 20px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.admin-logout:active { background: var(--cream-dark); }
+
+/* Stats */
+.stats {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 20px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.stat-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+/* Action bar */
+.action-bar {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.btn-primary {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--green);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-primary:active { transform: scale(0.98); background: var(--green-dark); }
+.btn-primary:disabled { opacity: 0.5; }
+
+.btn-secondary {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-light);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-secondary:active { background: var(--cream-dark); }
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(253, 248, 242, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-overlay.active { display: flex; }
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--cream-dark);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Cake List */
+.cake-list {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 20px 100px;
+}
+
+.admin-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 12px;
+  transition: var(--transition);
+}
+
+.admin-card-img {
+  width: 100px;
+  min-height: 100px;
+  flex-shrink: 0;
+  object-fit: cover;
+  background: var(--cream-dark);
+}
+
+.admin-card-img-placeholder {
+  width: 100px;
+  min-height: 100px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  background: var(--cream-dark);
+  color: var(--text-lighter);
+}
+
+.admin-card-body {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.admin-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-card-category {
+  font-size: 11px;
+  color: var(--green);
+  background: var(--green-light);
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  width: fit-content;
+}
+
+.admin-card-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--coral);
+}
+
+.admin-card-desc {
+  font-size: 11px;
+  color: var(--text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.admin-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 10px 10px 0;
+  flex-shrink: 0;
+}
+
+.admin-card-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.admin-card-btn:active { transform: scale(0.9); }
+
+.admin-card-btn.edit { background: var(--green-light); color: var(--green); }
+.admin-card-btn.delete { background: #FDE8E4; color: var(--red); }
+
+/* Empty admin state */
+.admin-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-lighter);
+}
+
+.admin-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.admin-empty-text { font-size: 14px; margin-bottom: 16px; }
+
+/* Form Modal */
+.form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.form-overlay.open { display: flex; }
+
+.form-modal {
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px 20px 32px;
+  animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.form-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--cream-dark);
+  border-radius: 4px;
+  margin: 0 auto 20px;
+}
+
+.form-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.form-label .required { color: var(--red); }
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--white);
+  color: var(--text);
+  outline: none;
+  transition: var(--transition);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(122, 158, 126, 0.12);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-lighter);
+  margin-top: 4px;
+}
+
+.form-img-preview {
+  width: 100%;
+  aspect-ratio: 16/10;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--cream-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  position: relative;
+}
+
+.form-img-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.form-img-preview .placeholder {
+  color: var(--text-lighter);
+  font-size: 13px;
+  text-align: center;
+}
+
+.form-img-upload-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-img-upload-row input { flex: 1; }
+
+.form-img-upload-btn {
+  padding: 10px 16px;
+  border: 1.5px dashed var(--green);
+  border-radius: var(--radius-sm);
+  background: var(--green-light);
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.form-img-upload-btn:active {
+  background: var(--green);
+  color: white;
+}
+
+.form-img-upload-progress {
+  font-size: 11px;
+  color: var(--text-lighter);
+  margin-top: 4px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.form-actions .btn-primary { flex: 1; }
+.form-actions .btn-cancel {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-light);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.form-actions .btn-cancel:active { background: var(--cream-dark); }
+
+.hidden { display: none !important; }
+
+/* Confirm Dialog */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.confirm-overlay.open { display: flex; }
+
+.confirm-box {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 28px 24px 20px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  animation: fadeUp 0.25s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.confirm-icon { font-size: 40px; margin-bottom: 12px; }
+
+.confirm-text {
+  font-size: 15px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.confirm-actions { display: flex; gap: 10px; }
+
+.confirm-actions .btn-cancel {
+  flex: 1;
+  padding: 12px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-light);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.confirm-actions .btn-danger {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--red);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400;
+  background: var(--text);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  opacity: 0;
+  transition: 0.3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.toast.show { opacity: 1; }
+
+@media (min-width: 480px) {
+  .admin-card-img { width: 120px; }
+  .admin-header-inner, .stats, .action-bar, .cake-list { max-width: 640px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-icon">🌸</div>
+  <div class="login-title">花甜管理</div>
+  <div class="login-sub">请输入管理密码</div>
+  <div class="login-form">
+    <input class="login-input" type="password" id="passwordInput" placeholder="管理密码" autocomplete="off">
+    <div class="login-error" id="loginError">密码错误，请重试</div>
+    <button class="login-btn" id="loginBtn">进入管理</button>
+  </div>
+</div>
+
+<!-- Admin Screen -->
+<div class="admin-screen" id="adminScreen">
+  <div class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-header-left">
+        <button class="admin-back" onclick="location.href='index.html'" aria-label="返回首页">←</button>
+        <span class="admin-title">蛋糕管理</span>
+      </div>
+      <button class="admin-logout" id="logoutBtn">退出</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" id="statTotal">0</div>
+      <div class="stat-label">全部蛋糕</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statCategories">0</div>
+      <div class="stat-label">蛋糕分类</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statLowest">¥0</div>
+      <div class="stat-label">起售价</div>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn-primary" id="addBtn">＋ 新增蛋糕</button>
+    <button class="btn-secondary" id="sampleBtn">📥 恢复示例</button>
+  </div>
+
+  <div class="cake-list" id="cakeList"></div>
+</div>
+
+<!-- Form Modal -->
+<div class="form-overlay" id="formOverlay">
+  <div class="form-modal">
+    <div class="form-handle"></div>
+    <div class="form-title" id="formTitle">新增蛋糕</div>
+
+    <div class="form-group">
+      <label class="form-label">蛋糕名称 <span class="required">*</span></label>
+      <input class="form-input" id="formName" placeholder="如：莓果森林" maxlength="20">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">价格 (元) <span class="required">*</span></label>
+      <input class="form-input" id="formPrice" type="number" min="1" step="0.01" placeholder="如：268">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">分类</label>
+      <input class="form-input" id="formCategory" placeholder="如：奶油蛋糕、千层、切块蛋糕" list="catSuggestions">
+      <datalist id="catSuggestions">
+        <option value="奶油蛋糕">
+        <option value="千层">
+        <option value="切块蛋糕">
+        <option value="慕斯蛋糕">
+        <option value="定制蛋糕">
+        <option value="纸杯蛋糕">
+      </datalist>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">描述</label>
+      <textarea class="form-textarea" id="formDesc" placeholder="描述蛋糕的特色、口味、食材..." maxlength="200"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">角标标签（可选）</label>
+      <input class="form-input" id="formBadge" placeholder="如：人气推荐、新品、限时优惠">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">蛋糕图片</label>
+      <div class="form-img-upload-row">
+        <input class="form-input" id="formImgUrl" placeholder="粘贴图片网址" oninput="previewImg(this.value)">
+        <label class="form-img-upload-btn" id="uploadBtnLabel">
+          📁 本地上传
+          <input type="file" accept="image/*" id="fileInput" style="display:none">
+        </label>
+      </div>
+      <div class="form-hint">支持粘贴网络图片链接，或从手机相册上传照片</div>
+      <div class="form-img-preview" id="imgPreview">
+        <span class="placeholder">暂无图片</span>
+      </div>
+      <div class="form-img-upload-progress" id="uploadProgress"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-cancel" id="formCancel">取消</button>
+      <button class="btn-primary" id="formSubmit">保存</button>
+    </div>
+    <input type="hidden" id="formEditId" value="">
+  </div>
+</div>
+
+<!-- Confirm Dialog -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-text" id="confirmText">确定要删除这个蛋糕吗？</div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" id="confirmCancel">取消</button>
+      <button class="btn-danger" id="confirmOk">删除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// 配置 - 部署前替换为你的 Supabase 项目信息
+// ============================================================
+var SUPABASE_URL = 'https://your-project-id.supabase.co';
+var SUPABASE_ANON_KEY = 'your-anon-key';
+
+// 管理员登录邮箱（在 Supabase Auth 中创建的账号）
+var ADMIN_EMAIL = 'admin@huatian.com';
+// ============================================================
+
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ----- Elements -----
+var loginScreen = document.getElementById('loginScreen');
+var adminScreen = document.getElementById('adminScreen');
+var cakeList = document.getElementById('cakeList');
+var loadingOverlay = document.getElementById('loadingOverlay');
+var toast = document.getElementById('toast');
+
+// ----- Loading -----
+function showLoading() { loadingOverlay.classList.add('active'); }
+function hideLoading() { loadingOverlay.classList.remove('active'); }
+
+// ----- Auth -----
+async function checkSession() {
+  var result = await sb.auth.getSession();
+  return result.data.session;
+}
+
+async function doLogin(password) {
+  var result = await sb.auth.signInWithPassword({ email: ADMIN_EMAIL, password: password });
+  if (result.error) return false;
+  return true;
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+// ----- App -----
+var editingId = null;
+var currentImgData = '';
+
+async function initApp() {
+  showLoading();
+  var session = await checkSession();
+  hideLoading();
+  if (session) {
+    showAdmin();
+  } else {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  loginScreen.style.display = 'flex';
+  adminScreen.classList.remove('active');
+}
+
+function showAdmin() {
+  loginScreen.style.display = 'none';
+  adminScreen.classList.add('active');
+  loadAndRender();
+}
+
+// ----- Login -----
+document.getElementById('loginBtn').addEventListener('click', async function () {
+  var pwd = document.getElementById('passwordInput').value;
+  document.getElementById('loginError').style.display = 'none';
+  showLoading();
+  var ok = await doLogin(pwd);
+  hideLoading();
+  if (ok) {
+    showAdmin();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+});
+
+document.getElementById('passwordInput').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async function () {
+  await doLogout();
+  showLogin();
+});
+
+// ----- CRUD -----
+async function fetchCakes() {
+  var result = await sb.from('cakes').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true });
+  if (result.error) { console.error(result.error); return []; }
+  return result.data || [];
+}
+
+async function saveCake(cake) {
+  var result = await sb.from('cakes').insert(cake).select();
+  return result;
+}
+
+async function updateCake(id, updates) {
+  var result = await sb.from('cakes').update(updates).eq('id', id);
+  return result;
+}
+
+async function removeCake(id) {
+  var result = await sb.from('cakes').delete().eq('id', id);
+  return result;
+}
+
+// ----- Image Upload -----
+function compressImage(file, maxWidth, quality) {
+  maxWidth = maxWidth || 1200;
+  quality = quality || 0.8;
+  return new Promise(function (resolve) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height;
+        if (w > maxWidth) { h = h * maxWidth / w; w = maxWidth; }
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function (blob) { resolve(blob); }, 'image/webp', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadImageToStorage(file) {
+  var compressed = await compressImage(file);
+  var ext = 'webp';
+  var path = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  var result = await sb.storage.from('cake-images').upload(path, compressed, { contentType: 'image/webp' });
+  if (result.error) throw result.error;
+  var urlResult = sb.storage.from('cake-images').getPublicUrl(path);
+  return urlResult.data.publicUrl;
+}
+
+// ----- Render -----
+async function loadAndRender() {
+  showLoading();
+  var cakes = await fetchCakes();
+  renderStats(cakes);
+  renderCakeList(cakes);
+  hideLoading();
+}
+
+function renderStats(cakes) {
+  document.getElementById('statTotal').textContent = cakes.length;
+  var cats = [];
+  cakes.forEach(function (c) {
+    if (c.category && cats.indexOf(c.category) === -1) cats.push(c.category);
+  });
+  document.getElementById('statCategories').textContent = cats.length;
+  var prices = cakes.map(function (c) { return c.price; }).filter(function (p) { return p > 0; });
+  document.getElementById('statLowest').textContent = prices.length ? '¥' + Math.min.apply(null, prices) : '¥0';
+}
+
+function renderCakeList(cakes) {
+  if (cakes.length === 0) {
+    cakeList.innerHTML =
+      '<div class="admin-empty">' +
+      '<div class="admin-empty-icon">🍰</div>' +
+      '<p class="admin-empty-text">还没有蛋糕，点击上方按钮添加吧</p>' +
+      '</div>';
+    return;
+  }
+
+  cakeList.innerHTML = cakes.map(function (cake) {
+    return '<div class="admin-card">' +
+      (cake.image_url
+        ? '<img class="admin-card-img" src="' + cake.image_url + '" alt="' + cake.name + '" onerror="this.outerHTML=\'<div class=\\\\\'admin-card-img-placeholder\\\\\'>🎂</div>\'">'
+        : '<div class="admin-card-img-placeholder">🎂</div>') +
+      '<div class="admin-card-body">' +
+      '<div class="admin-card-name">' + cake.name + '</div>' +
+      (cake.category ? '<span class="admin-card-category">' + cake.category + '</span>' : '') +
+      '<div class="admin-card-price">¥' + cake.price + '</div>' +
+      '<div class="admin-card-desc">' + (cake.description || '') + '</div>' +
+      '</div>' +
+      '<div class="admin-card-actions">' +
+      '<button class="admin-card-btn edit" data-id="' + cake.id + '" title="编辑">✏️</button>' +
+      '<button class="admin-card-btn delete" data-id="' + cake.id + '" title="删除">🗑️</button>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+
+  Array.from(document.querySelectorAll('.admin-card-btn.edit')).forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = parseInt(btn.getAttribute('data-id'));
+      openEditForm(id);
+    });
+  });
+
+  Array.from(document.querySelectorAll('.admin-card-btn.delete')).forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = parseInt(btn.getAttribute('data-id'));
+      promptDelete(id);
+    });
+  });
+}
+
+// ----- Form -----
+function openAddForm() {
+  editingId = null;
+  document.getElementById('formTitle').textContent = '新增蛋糕';
+  document.getElementById('formSubmit').textContent = '保存';
+  document.getElementById('formName').value = '';
+  document.getElementById('formPrice').value = '';
+  document.getElementById('formCategory').value = '';
+  document.getElementById('formDesc').value = '';
+  document.getElementById('formBadge').value = '';
+  document.getElementById('formImgUrl').value = '';
+  document.getElementById('formEditId').value = '';
+  document.getElementById('uploadProgress').textContent = '';
+  currentImgData = '';
+  document.getElementById('imgPreview').innerHTML = '<span class="placeholder">暂无图片</span>';
+  document.getElementById('formOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+async function openEditForm(id) {
+  var cakes = await fetchCakes();
+  var cake = cakes.find(function (c) { return c.id === id; });
+  if (!cake) return;
+  editingId = id;
+  document.getElementById('formTitle').textContent = '编辑蛋糕';
+  document.getElementById('formSubmit').textContent = '更新';
+  document.getElementById('formName').value = cake.name || '';
+  document.getElementById('formPrice').value = cake.price || '';
+  document.getElementById('formCategory').value = cake.category || '';
+  document.getElementById('formDesc').value = cake.description || '';
+  document.getElementById('formBadge').value = cake.badge || '';
+  document.getElementById('formImgUrl').value = cake.image_url || '';
+  document.getElementById('formEditId').value = id;
+  document.getElementById('uploadProgress').textContent = '';
+  currentImgData = cake.image_url || '';
+  previewImg(cake.image_url || '');
+  document.getElementById('formOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeForm() {
+  document.getElementById('formOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function handleFormSubmit() {
+  var name = document.getElementById('formName').value.trim();
+  var price = parseFloat(document.getElementById('formPrice').value);
+  var category = document.getElementById('formCategory').value.trim();
+  var description = document.getElementById('formDesc').value.trim();
+  var badge = document.getElementById('formBadge').value.trim();
+  var image_url = currentImgData;
+
+  if (!name) { showToast('请输入蛋糕名称'); return; }
+  if (!price || price <= 0) { showToast('请输入有效价格'); return; }
+
+  var data = { name: name, price: price, category: category, description: description, badge: badge, image_url: image_url };
+  showLoading();
+
+  if (editingId) {
+    var result = await updateCake(editingId, data);
+    hideLoading();
+    if (result.error) { showToast('保存失败: ' + result.error.message); return; }
+    closeForm();
+    await loadAndRender();
+    showToast('蛋糕已更新 ✨');
+  } else {
+    data.sort_order = 0;
+    var result = await saveCake(data);
+    hideLoading();
+    if (result.error) { showToast('添加失败: ' + result.error.message); return; }
+    closeForm();
+    await loadAndRender();
+    showToast('蛋糕已添加 🎉');
+  }
+}
+
+function previewImg(url) {
+  var preview = document.getElementById('imgPreview');
+  if (!url) {
+    preview.innerHTML = '<span class="placeholder">暂无图片</span>';
+    return;
+  }
+  preview.innerHTML = '<img src="' + url + '" alt="预览" onerror="this.outerHTML=\'<span class=\\\\\'placeholder\\\\\'>图片加载失败</span>\'">';
+}
+
+// File upload handling
+document.getElementById('fileInput').addEventListener('change', async function (e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+  if (file.size > 10 * 1024 * 1024) { showToast('图片不能超过 10MB'); return; }
+
+  var progress = document.getElementById('uploadProgress');
+  progress.textContent = '⏳ 正在压缩上传...';
+
+  try {
+    var url = await uploadImageToStorage(file);
+    currentImgData = url;
+    progress.textContent = '✅ 上传成功';
+    document.getElementById('imgPreview').innerHTML = '<img src="' + url + '" alt="预览">';
+    document.getElementById('formImgUrl').value = '';
+  } catch (err) {
+    progress.textContent = '❌ 上传失败，请重试';
+    showToast('图片上传失败');
+    console.error(err);
+  }
+
+  // Reset file input so same file can be selected again
+  e.target.value = '';
+});
+
+// ----- Delete -----
+var deleteTargetId = null;
+
+function promptDelete(id) {
+  deleteTargetId = id;
+  fetchCakes().then(function (cakes) {
+    var cake = cakes.find(function (c) { return c.id === id; });
+    document.getElementById('confirmText').textContent = '确定要删除「' + (cake ? cake.name : '') + '」吗？';
+    document.getElementById('confirmOverlay').classList.add('open');
+  });
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  deleteTargetId = null;
+}
+
+async function doConfirmDelete() {
+  if (!deleteTargetId) return;
+  showLoading();
+  var result = await removeCake(deleteTargetId);
+  hideLoading();
+  closeConfirm();
+  if (result.error) { showToast('删除失败'); return; }
+  await loadAndRender();
+  showToast('已删除 🗑️');
+}
+
+// ----- Restore samples -----
+async function restoreSamples() {
+  showLoading();
+  // Delete all existing
+  await sb.from('cakes').delete().neq('id', 0);
+
+  var samples = [
+    { name: '莓果森林', price: 268, category: '奶油蛋糕', description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气推荐', image_url: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&q=80', sort_order: 1 },
+    { name: '日式抹茶千层', price: 298, category: '千层', description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '', image_url: 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=400&q=80', sort_order: 2 },
+    { name: '玫瑰荔枝', price: 328, category: '奶油蛋糕', description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80', sort_order: 3 },
+    { name: '经典提拉米苏', price: 248, category: '切块蛋糕', description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: 'https://images.unsplash.com/photo-1556217477-d325251ece38?w=400&q=80', sort_order: 4 },
+    { name: '柠檬天使', price: 218, category: '切块蛋糕', description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品', image_url: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&q=80', sort_order: 5 },
+    { name: '黑森林', price: 288, category: '奶油蛋糕', description: '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', badge: '', image_url: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=400&q=80', sort_order: 6 },
+    { name: '芒果椰子', price: 258, category: '奶油蛋糕', description: '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', badge: '', image_url: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a58?w=400&q=80', sort_order: 7 },
+    { name: '法式巧克力慕斯', price: 318, category: '切块蛋糕', description: '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', badge: '', image_url: 'https://images.unsplash.com/photo-1542826438-bd32f43d626f?w=400&q=80', sort_order: 8 }
+  ];
+
+  var errors = 0;
+  for (var i = 0; i < samples.length; i++) {
+    var result = await sb.from('cakes').insert(samples[i]);
+    if (result.error) errors++;
+  }
+
+  hideLoading();
+  await loadAndRender();
+  if (errors === 0) {
+    showToast('已恢复示例数据 📥');
+  } else {
+    showToast('部分数据恢复失败');
+  }
+}
+
+// ----- Event bindings -----
+document.getElementById('addBtn').addEventListener('click', openAddForm);
+document.getElementById('sampleBtn').addEventListener('click', restoreSamples);
+document.getElementById('formCancel').addEventListener('click', closeForm);
+document.getElementById('formSubmit').addEventListener('click', handleFormSubmit);
+document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
+document.getElementById('confirmOk').addEventListener('click', doConfirmDelete);
+
+document.getElementById('formOverlay').addEventListener('click', function (e) {
+  if (e.target === document.getElementById('formOverlay')) closeForm();
+});
+document.getElementById('confirmOverlay').addEventListener('click', function (e) {
+  if (e.target === document.getElementById('confirmOverlay')) closeConfirm();
+});
+
+// ----- Toast -----
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function () { toast.classList.remove('show'); }, 2500);
+}
+
+// ----- Init -----
+initApp();
+</script>
+</body>
+</html>

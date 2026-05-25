@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="description" content="花甜 - 私房蛋糕，纯手工制作，用最好的食材做出最温暖的蛋糕">
+<meta name="format-detection" content="telephone=no">
+<title>花甜 · 私房蛋糕</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --green: #7A9E7E;
+  --green-light: #E8F0E6;
+  --green-dark: #5A7E5E;
+  --cream: #FDF8F2;
+  --cream-dark: #F5EDE0;
+  --blush: #F0D0C8;
+  --blush-light: #F8E8E4;
+  --coral: #E8A090;
+  --brown: #8B7355;
+  --brown-light: #C4B59B;
+  --text: #3D3D3D;
+  --text-light: #8A8A8A;
+  --text-lighter: #B5B5B5;
+  --white: #FFFFFF;
+  --shadow: 0 4px 20px rgba(122, 158, 126, 0.1);
+  --shadow-hover: 0 8px 32px rgba(122, 158, 126, 0.18);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+img { display: block; max-width: 100%; }
+
+a { text-decoration: none; color: inherit; }
+
+/* Navigation */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(253, 248, 242, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(122, 158, 126, 0.1);
+}
+
+.nav-inner {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-brand-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: white;
+}
+
+.nav-brand-text {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--green-dark);
+  letter-spacing: 2px;
+}
+
+.nav-admin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--brown-light);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brown);
+  font-size: 16px;
+  transition: var(--transition);
+}
+
+.nav-admin:active { background: var(--cream-dark); }
+
+/* Hero */
+.hero {
+  padding: 100px 20px 48px;
+  text-align: center;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.hero-subtitle {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--green);
+  background: var(--green-light);
+  padding: 4px 14px;
+  border-radius: 20px;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+.hero-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--green-dark);
+  letter-spacing: 4px;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+
+.hero-desc {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.8;
+  max-width: 320px;
+  margin: 0 auto;
+  font-weight: 300;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px 0 20px;
+}
+
+.divider-line {
+  width: 40px;
+  height: 1px;
+  background: var(--brown-light);
+  opacity: 0.5;
+}
+
+.divider-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--blush);
+}
+
+/* Categories */
+.categories {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.categories::-webkit-scrollbar { display: none; }
+
+.categories-inner {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.cat-btn {
+  flex-shrink: 0;
+  padding: 8px 20px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: 24px;
+  background: var(--white);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.cat-btn:active { transform: scale(0.96); }
+
+.cat-btn.active {
+  background: var(--green);
+  color: white;
+  border-color: var(--green);
+}
+
+/* Cake Grid */
+.cake-grid {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px 100px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Cake Card */
+.cake-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  cursor: pointer;
+  animation: fadeUp 0.5s ease both;
+}
+
+.cake-card:nth-child(2n) { animation-delay: 0.1s; }
+.cake-card:nth-child(3n) { animation-delay: 0.2s; }
+.cake-card:nth-child(4n) { animation-delay: 0.15s; }
+
+.cake-card:active { transform: scale(0.98); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cake-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--cream-dark);
+}
+
+.cake-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.cake-card:hover .cake-img { transform: scale(1.05); }
+
+.cake-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: var(--text-lighter);
+  background: linear-gradient(135deg, var(--cream-dark), var(--green-light));
+}
+
+.cake-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 500;
+  color: white;
+  background: var(--coral);
+}
+
+.cake-info {
+  padding: 12px 14px 14px;
+}
+
+.cake-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.cake-desc {
+  font-size: 12px;
+  color: var(--text-light);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 8px;
+  font-weight: 300;
+}
+
+.cake-price {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--coral);
+  letter-spacing: 0.5px;
+}
+
+.cake-price-unit {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-lighter);
+}
+
+.cake-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.cake-tag {
+  font-size: 10px;
+  color: var(--green);
+  background: var(--green-light);
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+/* Empty state */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-lighter);
+}
+
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state-text { font-size: 14px; }
+
+/* Error state */
+.error-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-state-icon { font-size: 48px; margin-bottom: 12px; }
+.error-state-text { font-size: 14px; color: var(--text-light); margin-bottom: 12px; }
+
+.error-retry {
+  padding: 10px 24px;
+  border: 1.5px solid var(--green);
+  border-radius: 24px;
+  background: var(--white);
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.error-retry:active { background: var(--green-light); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-overlay.open { display: flex; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px 20px 32px;
+  animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--cream-dark);
+  border-radius: 4px;
+  margin: 0 auto 16px;
+}
+
+.modal-img {
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  background: var(--cream-dark);
+}
+
+.modal-name {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.modal-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--coral);
+  margin-bottom: 12px;
+}
+
+.modal-price-unit { font-size: 14px; color: var(--text-lighter); font-weight: 400; }
+
+.modal-desc {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.8;
+  margin-bottom: 20px;
+  font-weight: 300;
+}
+
+.modal-contact {
+  background: var(--green-light);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+}
+
+.modal-contact-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--green-dark);
+  margin-bottom: 8px;
+}
+
+.modal-contact-wechat {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--green-dark);
+}
+
+.modal-close {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 16px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.modal-close:active { background: var(--cream-dark); }
+
+/* Footer */
+.footer {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  text-align: center;
+}
+
+.footer-divider {
+  width: 60px;
+  height: 1px;
+  background: var(--brown-light);
+  opacity: 0.3;
+  margin: 0 auto 20px;
+}
+
+.footer-text {
+  font-size: 12px;
+  color: var(--text-lighter);
+  line-height: 2;
+  font-weight: 300;
+}
+
+.footer-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green);
+  font-weight: 500;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  background: var(--text);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  opacity: 0;
+  transition: 0.3s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.toast.show { opacity: 1; }
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.skeleton-card .skeleton-img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-card .skeleton-body {
+  padding: 12px 14px;
+}
+
+.skeleton-card .skeleton-line {
+  height: 14px;
+  background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-card .skeleton-line:last-child { width: 60%; }
+
+@media (min-width: 480px) {
+  .cake-grid { gap: 20px; }
+  .hero-title { font-size: 36px; }
+}
+
+@media (min-width: 640px) {
+  .cake-grid { grid-template-columns: repeat(3, 1fr); max-width: 640px; }
+  .hero, .categories, .nav-inner { max-width: 640px; }
+}
+
+@media (min-width: 1024px) {
+  .cake-grid { grid-template-columns: repeat(4, 1fr); max-width: 900px; gap: 24px; }
+  .hero, .categories, .nav-inner { max-width: 900px; }
+  .hero { padding-top: 120px; }
+  .hero-title { font-size: 42px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <div class="nav-brand-icon">🌸</div>
+      <span class="nav-brand-text">花甜</span>
+    </div>
+    <button class="nav-admin" onclick="location.href='admin.html'" aria-label="管理">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<section class="hero">
+  <span class="hero-subtitle">纯手工 · 无添加</span>
+  <h1 class="hero-title">每一口都是幸福</h1>
+  <div class="divider">
+    <span class="divider-line"></span>
+    <span class="divider-dot"></span>
+    <span class="divider-line"></span>
+  </div>
+  <p class="hero-desc">精选天然食材，用心手作，为每个值得纪念的日子打造独一无二的味道</p>
+</section>
+
+<div class="categories" id="categories">
+  <div class="categories-inner" id="categoryList"></div>
+</div>
+
+<div class="cake-grid" id="cakeGrid">
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+</div>
+
+<footer class="footer">
+  <div class="footer-divider"></div>
+  <p class="footer-text">
+    花甜 · 私房蛋糕<br>
+    纯手工制作 · 需提前预定
+  </p>
+  <div class="footer-contact">📱 微信: huatiandangao</div>
+</footer>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <img class="modal-img" id="modalImg" alt="">
+    <h2 class="modal-name" id="modalName"></h2>
+    <div class="modal-price" id="modalPrice"></div>
+    <p class="modal-desc" id="modalDesc"></p>
+    <div class="modal-contact">
+      <div class="modal-contact-title">💬 咨询 & 订购</div>
+      <div class="modal-contact-wechat">📱 huatiandangao</div>
+    </div>
+    <button class="modal-close" id="modalClose">关闭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// 配置 - 部署前替换为你的 Supabase 项目信息
+// ============================================================
+var SUPABASE_URL = 'https://your-project-id.supabase.co';
+var SUPABASE_ANON_KEY = 'your-anon-key';
+
+// ============================================================
+
+var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+var grid = document.getElementById('cakeGrid');
+var categoryList = document.getElementById('categoryList');
+var modalOverlay = document.getElementById('modalOverlay');
+var toast = document.getElementById('toast');
+var currentCategory = '全部';
+
+async function loadCakes() {
+  var result = await sb.from('cakes').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: true });
+  if (result.error) {
+    console.error('加载蛋糕失败:', result.error);
+    return null;
+  }
+  return result.data || [];
+}
+
+function getCategories(cakes) {
+  var cats = ['全部'];
+  cakes.forEach(function (c) {
+    if (c.category && cats.indexOf(c.category) === -1) cats.push(c.category);
+  });
+  return cats;
+}
+
+function renderCategories(cakes) {
+  var cats = getCategories(cakes);
+  categoryList.innerHTML = cats.map(function (cat) {
+    return '<button class="cat-btn ' + (cat === currentCategory ? 'active' : '') + '" data-cat="' + cat + '">' + cat + '</button>';
+  }).join('');
+
+  Array.from(document.querySelectorAll('.cat-btn')).forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.cat-btn').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentCategory = btn.getAttribute('data-cat');
+      renderCakes();
+    });
+  });
+}
+
+function renderCakes() {
+  loadCakes().then(function (cakes) {
+    if (!cakes) {
+      grid.innerHTML =
+        '<div class="error-state">' +
+        '<div class="error-state-icon">😅</div>' +
+        '<p class="error-state-text">网络开小差了，请稍后重试</p>' +
+        '<button class="error-retry" onclick="renderCakes()">重新加载</button>' +
+        '</div>';
+      return;
+    }
+
+    var filtered = currentCategory === '全部' ? cakes : cakes.filter(function (c) { return c.category === currentCategory; });
+
+    if (filtered.length === 0) {
+      grid.innerHTML =
+        '<div class="empty-state">' +
+        '<div class="empty-state-icon">🍰</div>' +
+        '<p class="empty-state-text">暂无蛋糕，敬请期待～</p>' +
+        '</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(function (cake) {
+      return '<div class="cake-card" data-id="' + cake.id + '">' +
+        '<div class="cake-img-wrap">' +
+        (cake.image_url
+          ? '<img class="cake-img" src="' + cake.image_url + '" alt="' + cake.name + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=\\\\\'cake-img-placeholder\\\\\'>🎂</div>\'">'
+          : '<div class="cake-img-placeholder">🎂</div>') +
+        (cake.badge ? '<span class="cake-badge">' + cake.badge + '</span>' : '') +
+        '</div>' +
+        '<div class="cake-info">' +
+        '<div class="cake-name">' + cake.name + '</div>' +
+        '<div class="cake-desc">' + (cake.description || '') + '</div>' +
+        '<div class="cake-meta">' +
+        '<span class="cake-price">¥' + cake.price + ' <span class="cake-price-unit">/个</span></span>' +
+        (cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
+        '</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+
+    Array.from(document.querySelectorAll('.cake-card')).forEach(function (card) {
+      card.addEventListener('click', function () {
+        var id = parseInt(card.getAttribute('data-id'));
+        loadCakes().then(function (cakes) {
+          var cake = cakes.find(function (c) { return c.id === id; });
+          if (cake) showModal(cake);
+        });
+      });
+    });
+  });
+}
+
+function showModal(cake) {
+  document.getElementById('modalImg').src = cake.image_url || '';
+  document.getElementById('modalName').textContent = cake.name;
+  document.getElementById('modalPrice').innerHTML = '¥' + cake.price + ' <span class="modal-price-unit">/个</span>';
+  document.getElementById('modalDesc').textContent = cake.description || '';
+  modalOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function hideModal() {
+  modalOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+modalOverlay.addEventListener('click', function (e) {
+  if (e.target === modalOverlay) hideModal();
+});
+document.getElementById('modalClose').addEventListener('click', hideModal);
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
+}
+
+// Init
+renderCategories([]);
+renderCakes();
+</script>
+</body>
+</html>
