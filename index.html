@@ -184,9 +184,26 @@ a { text-decoration: none; color: inherit; }
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  position: relative;
 }
 
 .categories::-webkit-scrollbar { display: none; }
+
+.categories::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 100%;
+  background: linear-gradient(to right, transparent, var(--cream));
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.categories.at-end::after {
+  opacity: 0;
+}
 
 .categories-inner {
   display: flex;
@@ -799,7 +816,8 @@ var TAB_CONFIG = [
   { id: 'promoted', label: '🏆 当季主推' },
   { id: '奶油蛋糕', label: '🎂 奶油蛋糕' },
   { id: '甜点下午茶', label: '🍪 甜点下午茶' },
-  { id: '宴会甜品', label: '🎉 宴会甜品' }
+  { id: '宴会甜品', label: '🎉 宴会甜品' },
+  { id: '其他', label: '📦 其他' }
 ];
 
 function renderCategories() {
@@ -972,11 +990,24 @@ function showToast(msg) {
   toast._timer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
 }
 
+// Categories scroll fade
+var catScroll = document.querySelector('.categories');
+function checkCatScroll() {
+  if (catScroll.scrollLeft + catScroll.clientWidth >= catScroll.scrollWidth - 5) {
+    catScroll.classList.add('at-end');
+  } else {
+    catScroll.classList.remove('at-end');
+  }
+}
+catScroll.addEventListener('scroll', checkCatScroll);
+setTimeout(checkCatScroll, 100);
+
 // Init
 currentCategory = 'promoted';
 renderCategories();
 loadCakes().then(function (cakes) {
   renderCakes(cakes);
+  setTimeout(checkCatScroll, 200);
 });
 </script>
 </body>
