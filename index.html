@@ -548,47 +548,28 @@ a { text-decoration: none; color: inherit; }
 
 .toast.show { opacity: 1; }
 
-/* Skeleton loading */
-.skeleton {
-  background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius);
+/* Loading spinner */
+.grid-loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-lighter);
+  font-size: 14px;
 }
 
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.grid-loading::after {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 28px;
+  margin: 12px auto 0;
+  border: 3px solid var(--cream-dark);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.skeleton-card {
-  background: var(--white);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.skeleton-card .skeleton-img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-.skeleton-card .skeleton-body {
-  padding: 12px 14px;
-}
-
-.skeleton-card .skeleton-line {
-  height: 14px;
-  background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.skeleton-card .skeleton-line:last-child { width: 60%; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (min-width: 480px) {
   .cake-grid { gap: 20px; }
@@ -635,10 +616,7 @@ a { text-decoration: none; color: inherit; }
 </div>
 
 <div class="cake-grid" id="cakeGrid">
-  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
-  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
-  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
-  <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-body"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>
+  <div class="grid-loading">正在加载...</div>
 </div>
 
 <footer class="footer">
@@ -734,56 +712,84 @@ function renderCategories(cakes) {
   });
 }
 
-function renderCakes() {
-  loadCakes().then(function (cakes) {
-    if (!cakes) {
-      grid.innerHTML =
-        '<div class="error-state">' +
-        '<div class="error-state-icon">😅</div>' +
-        '<p class="error-state-text">网络开小差了，请稍后重试</p>' +
-        '<button class="error-retry" onclick="renderCakes()">重新加载</button>' +
-        '</div>';
-      return;
-    }
+function renderCakes(cakes) {
+  if (cakes === undefined) {
+    loadCakes().then(function (data) {
+      if (data === null) { renderCakes(null); return; }
+      renderCakes(data);
+    });
+    return;
+  }
 
-    var filtered = currentCategory === '全部' ? cakes : cakes.filter(function (c) { return c.category === currentCategory; });
+  if (cakes === null) {
+    grid.innerHTML =
+      '<div class="error-state">' +
+      '<div class="error-state-icon">😅</div>' +
+      '<p class="error-state-text">网络开小差了，请稍后重试</p>' +
+      '<button class="error-retry" onclick="renderCakes()">重新加载</button>' +
+      '</div>';
+    return;
+  }
 
-    if (filtered.length === 0) {
-      grid.innerHTML =
-        '<div class="empty-state">' +
-        '<div class="empty-state-icon">🍰</div>' +
-        '<p class="empty-state-text">暂无蛋糕，敬请期待～</p>' +
-        '</div>';
-      return;
-    }
+  var filtered = currentCategory === '全部' ? cakes : cakes.filter(function (c) { return c.category === currentCategory; });
 
-    grid.innerHTML = filtered.map(function (cake) {
-      return '<div class="cake-card" data-id="' + cake.id + '">' +
-        '<div class="cake-img-wrap">' +
-        (cake.image_url
-          ? '<img class="cake-img" src="' + cake.image_url + '" alt="' + cake.name + '" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=\\\\\'cake-img-placeholder\\\\\'>🎂</div>\'">'
-          : '<div class="cake-img-placeholder">🎂</div>') +
-        (cake.badge ? '<span class="cake-badge">' + cake.badge + '</span>' : '') +
-        '</div>' +
-        '<div class="cake-info">' +
-        '<div class="cake-name">' + cake.name + '</div>' +
-        '<div class="cake-desc">' + (cake.description || '') + '</div>' +
-        '<div class="cake-meta">' +
-        '<span class="cake-price">¥' + cake.price + ' <span class="cake-price-unit">/个</span></span>' +
-        (cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
-        '</div>' +
-        '</div>' +
-        '</div>';
-    }).join('');
+  if (filtered.length === 0) {
+    grid.innerHTML =
+      '<div class="empty-state">' +
+      '<div class="empty-state-icon">🍰</div>' +
+      '<p class="empty-state-text">暂无蛋糕，敬请期待～</p>' +
+      '</div>';
+    return;
+  }
 
-    Array.from(document.querySelectorAll('.cake-card')).forEach(function (card) {
-      card.addEventListener('click', function () {
-        var id = parseInt(card.getAttribute('data-id'));
-        loadCakes().then(function (cakes) {
-          var cake = cakes.find(function (c) { return c.id === id; });
-          if (cake) showModal(cake);
-        });
+  window._cakes = filtered;
+  var total = filtered.length;
+
+  grid.innerHTML = filtered.map(function (cake, i) {
+    var eager = i < 6 || total <= 6;
+    var hasImg = !!cake.image_url;
+    return '<div class="cake-card" data-index="' + i + '">' +
+      '<div class="cake-img-wrap">' +
+      (hasImg
+        ? '<img class="cake-img' + (eager ? '' : ' lazy') + '" src="' + (eager ? cake.image_url : '') + '" data-src="' + cake.image_url + '" alt="' + cake.name + '">'
+        : '<div class="cake-img-placeholder">🎂</div>') +
+      (cake.badge ? '<span class="cake-badge">' + cake.badge + '</span>' : '') +
+      '</div>' +
+      '<div class="cake-info">' +
+      '<div class="cake-name">' + cake.name + '</div>' +
+      '<div class="cake-desc">' + (cake.description || '') + '</div>' +
+      '<div class="cake-meta">' +
+      '<span class="cake-price">¥' + cake.price + ' <span class="cake-price-unit">/个</span></span>' +
+      (cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
+      '</div>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+
+  Array.from(document.querySelectorAll('.cake-img:not(.lazy)')).forEach(function (img) {
+    img.onerror = function () { this.outerHTML = '<div class="cake-img-placeholder">🎂</div>'; };
+  });
+
+  var lazyImgs = document.querySelectorAll('.cake-img.lazy');
+  if (lazyImgs.length > 0) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          var img = entry.target;
+          img.src = img.getAttribute('data-src');
+          img.classList.remove('lazy');
+          img.onerror = function () { this.outerHTML = '<div class="cake-img-placeholder">🎂</div>'; };
+          observer.unobserve(img);
+        }
       });
+    }, { rootMargin: '400px' });
+    lazyImgs.forEach(function (img) { observer.observe(img); });
+  }
+
+  Array.from(document.querySelectorAll('.cake-card')).forEach(function (card) {
+    card.addEventListener('click', function () {
+      var idx = parseInt(card.getAttribute('data-index'));
+      if (window._cakes[idx]) showModal(window._cakes[idx]);
     });
   });
 }
@@ -814,9 +820,11 @@ function showToast(msg) {
   toast._timer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
 }
 
-// Init
-renderCategories([]);
-renderCakes();
+// Init — 先加载数据再渲染分类和蛋糕
+loadCakes().then(function (cakes) {
+  renderCategories(cakes || []);
+  renderCakes(cakes);
+});
 </script>
 </body>
 </html>
