@@ -980,14 +980,17 @@ async function moveCake(id, direction) {
   if (idx === -1) return;
   var targetIdx = direction === 'up' ? idx - 1 : idx + 1;
   if (targetIdx < 0 || targetIdx >= cakes.length) return;
-  var current = cakes[idx];
-  var target = cakes[targetIdx];
-  var tempSort = current.sort_order;
+  var temp = cakes[idx];
+  cakes[idx] = cakes[targetIdx];
+  cakes[targetIdx] = temp;
   showLoading();
-  var r1 = await sb.from('cakes').update({ sort_order: target.sort_order }).eq('id', current.id);
-  var r2 = await sb.from('cakes').update({ sort_order: tempSort }).eq('id', target.id);
+  var errors = 0;
+  for (var i = 0; i < cakes.length; i++) {
+    var r = await sb.from('cakes').update({ sort_order: i + 1 }).eq('id', cakes[i].id);
+    if (r.error) errors++;
+  }
   hideLoading();
-  if (!r1.error && !r2.error) {
+  if (errors === 0) {
     await loadAndRender();
   } else {
     showToast('排序失败，请重试');
@@ -1175,7 +1178,9 @@ async function handleFormSubmit() {
     await loadAndRender();
     showToast('蛋糕已更新 ✨');
   } else {
-    data.sort_order = 0;
+    var allCakes = await fetchCakes();
+    var maxSort = allCakes.reduce(function (m, c) { return c.sort_order > m ? c.sort_order : m; }, 0);
+    data.sort_order = maxSort + 1;
     var result = await saveCake(data);
     hideLoading();
     if (result.error) { showToast('添加失败: ' + result.error.message); return; }
