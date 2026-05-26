@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <meta name="description" content="小胖私家烘焙 - 进口动物奶油，纯手工制作，来图定制。从奶油蛋糕到甜品台，每一份都用心手作">
 <meta name="format-detection" content="telephone=no">
+<!-- Open Graph / WeChat share preview -->
+<meta property="og:title" content="小胖私家烘焙">
+<meta property="og:description" content="进口动物奶油 · 纯手工 · 来图定制 — 从奶油蛋糕到甜品台，每一份都用心手作">
+<meta property="og:image" content="https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&q=80">
+<meta property="og:url" content="https://huatian-cake.pages.dev">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="小胖私家烘焙">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="小胖私家烘焙">
+<meta name="twitter:description" content="进口动物奶油 · 纯手工 · 来图定制">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&q=80">
 <title>小胖私家烘焙</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -190,19 +201,31 @@ a { text-decoration: none; color: inherit; }
 .categories::-webkit-scrollbar { display: none; }
 
 .categories::after {
-  content: '';
+  content: '→';
   position: absolute;
   top: 0;
   right: 0;
-  width: 40px;
+  width: 56px;
   height: 100%;
   background: linear-gradient(to right, transparent, var(--cream));
   pointer-events: none;
-  transition: opacity 0.3s;
+  transition: opacity 0.5s;
+  text-align: right;
+  line-height: 48px;
+  font-size: 20px;
+  color: var(--green);
+  padding-right: 6px;
+  animation: hint-pulse 2s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(3px); }
 }
 
 .categories.at-end::after {
   opacity: 0;
+  animation: none;
 }
 
 .categories-inner {
