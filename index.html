@@ -560,12 +560,6 @@ a { text-decoration: none; color: inherit; }
   box-shadow: 0 8px 40px rgba(0,0,0,0.25);
 }
 
-.poster-img-wrap canvas {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 8px;
-}
 
 .poster-hint {
   color: rgba(255,255,255,0.8);
@@ -1041,8 +1035,7 @@ a { text-decoration: none; color: inherit; }
 <div class="poster-overlay" id="posterOverlay">
   <div class="poster-container">
     <div class="poster-img-wrap">
-      <canvas id="posterCanvas"></canvas>
-      <img id="posterImg" style="display:none;width:100%;height:auto;border-radius:8px;">
+      <img id="posterImg" style="width:100%;height:auto;border-radius:8px;">
     </div>
     <p class="poster-hint">长按图片保存到手机</p>
     <button class="poster-close" id="posterClose">关闭</button>
@@ -1299,137 +1292,18 @@ function showToast(msg) {
 
 // ----- Share Poster -----
 var posterOverlay = document.getElementById('posterOverlay');
-var posterCanvas = document.getElementById('posterCanvas');
+var posterImg = document.getElementById('posterImg');
+var POSTER_URL = 'https://qcqobpckzceysdxyaryu.supabase.co/storage/v1/object/public/cake-images/poster.png';
 
 function showPoster() {
   posterOverlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-  generatePoster();
+  posterImg.src = POSTER_URL;
 }
 
 function hidePoster() {
   posterOverlay.classList.remove('open');
   document.body.style.overflow = '';
-}
-
-function generatePoster() {
-  var W = 600, H = 900;
-  var canvas = posterCanvas;
-  canvas.width = W;
-  canvas.height = H;
-  var ctx = canvas.getContext('2d');
-
-  // Background
-  ctx.fillStyle = '#FDF8F2';
-  ctx.fillRect(0, 0, W, H);
-
-  // Decorative top line
-  ctx.fillStyle = '#7A9E7E';
-  ctx.fillRect(0, 0, W, 6);
-
-  // Shop name
-  ctx.fillStyle = '#5A7E5E';
-  ctx.font = 'bold 40px "Noto Serif SC", serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('小胖私家烘焙', W / 2, 80);
-
-  // Divider
-  ctx.strokeStyle = '#E8F0E6';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(120, 105);
-  ctx.lineTo(W - 120, 105);
-  ctx.stroke();
-
-  // Cover image
-  var img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.src = 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&q=80';
-  img.onload = function () {
-    var iw = img.width, ih = img.height;
-    var cw = 480, ch = 320;
-    var sx = Math.max(0, (iw - cw * ih / ch) / 2);
-    var sy = 0;
-    var sw = iw;
-    var sh = ih;
-    if (iw / ih > cw / ch) {
-      sw = cw * ih / ch;
-      sx = (iw - sw) / 2;
-    } else {
-      sh = ch * iw / cw;
-    }
-    ctx.drawImage(img, sx, sy, sw, sh, 60, 140, cw, ch);
-
-    // Tagline
-    ctx.fillStyle = '#7A9E7E';
-    ctx.font = '18px "Noto Sans SC", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('进口动物奶油 · 纯手工 · 来图定制', W / 2, 530);
-
-    // Separator
-    ctx.strokeStyle = '#E8F0E6';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(200, 555);
-    ctx.lineTo(W - 200, 555);
-    ctx.stroke();
-
-    // QR codes - website + boss WeChat side by side
-    var qrSize = 140;
-    var gap = 20;
-    var totalWidth = qrSize * 2 + gap;
-    var startX = (W - totalWidth) / 2;
-    var qrY = 570;
-
-    var siteQr = new Image();
-    siteQr.crossOrigin = 'anonymous';
-    var bossQr = new Image();
-    bossQr.crossOrigin = 'anonymous';
-    var qrLoaded = [false, false];
-
-    function drawQrs() {
-      if (!qrLoaded[0] || !qrLoaded[1]) return;
-      ctx.drawImage(siteQr, startX, qrY, qrSize, qrSize);
-      ctx.drawImage(bossQr, startX + qrSize + gap, qrY, qrSize, qrSize);
-
-      ctx.fillStyle = '#8A8A8A';
-      ctx.font = '13px "Noto Sans SC", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('扫码查看款式', startX + qrSize / 2, qrY + qrSize + 26);
-      ctx.fillText('添加老板微信', startX + qrSize + gap + qrSize / 2, qrY + qrSize + 26);
-
-      ctx.fillStyle = '#3D3D3D';
-      ctx.font = '15px "Noto Sans SC", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('或搜索微信号 y15252681059', W / 2, qrY + qrSize + 64);
-
-      ctx.fillStyle = '#7A9E7E';
-      ctx.fillRect(0, H - 6, W, 6);
-
-      // Convert canvas to img for WeChat long-press save
-      var posterImg = document.getElementById('posterImg');
-      posterImg.src = canvas.toDataURL('image/png');
-      posterImg.style.display = 'block';
-      canvas.style.display = 'none';
-    }
-
-    siteQr.onload = function () { qrLoaded[0] = true; drawQrs(); };
-    siteQr.onerror = function () { qrLoaded[0] = true; drawQrs(); };
-    siteQr.src = 'https://qcqobpckzceysdxyaryu.supabase.co/storage/v1/object/public/cake-images/site_barcode.png';
-
-    bossQr.onload = function () { qrLoaded[1] = true; drawQrs(); };
-    bossQr.onerror = function () { qrLoaded[1] = true; drawQrs(); };
-    bossQr.src = 'https://qcqobpckzceysdxyaryu.supabase.co/storage/v1/object/public/cake-images/barcode.jpg';
-  };
-  img.onerror = function () {
-    // Fallback: draw a placeholder
-    ctx.fillStyle = '#E8F0E6';
-    ctx.fillRect(60, 140, 480, 320);
-    ctx.fillStyle = '#7A9E7E';
-    ctx.font = '20px "Noto Sans SC", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('🍰', W / 2, 290);
-  };
 }
 
 // ----- Share Sheet -----
