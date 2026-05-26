@@ -681,7 +681,7 @@ a { text-decoration: none; color: inherit; }
     <span class="divider-dot"></span>
     <span class="divider-line"></span>
   </div>
-  <p class="hero-desc">精选天然食材，用心手作，为每个值得纪念的日子打造独一无二的味道</p>
+  <p class="hero-desc">从奶油蛋糕到精致下午茶，从日常小食到宴会甜品台<br>用最好的食材手作出每一份甜蜜</p>
 </section>
 
 <div class="categories" id="categories">
@@ -776,18 +776,16 @@ function formatPrice(price) {
   return '¥' + price + ' <span class="cake-price-unit">/个</span>';
 }
 
-function getCategories(cakes) {
-  var cats = ['全部'];
-  cakes.forEach(function (c) {
-    if (c.category && cats.indexOf(c.category) === -1) cats.push(c.category);
-  });
-  return cats;
-}
+var TAB_CONFIG = [
+  { id: 'promoted', label: '🏆 当季主推' },
+  { id: '奶油蛋糕', label: '🎂 奶油蛋糕' },
+  { id: '甜点下午茶', label: '🍪 甜点下午茶' },
+  { id: '宴会甜品', label: '🎉 宴会甜品' }
+];
 
-function renderCategories(cakes) {
-  var cats = getCategories(cakes);
-  categoryList.innerHTML = cats.map(function (cat) {
-    return '<button class="cat-btn ' + (cat === currentCategory ? 'active' : '') + '" data-cat="' + cat + '">' + cat + '</button>';
+function renderCategories() {
+  categoryList.innerHTML = TAB_CONFIG.map(function (tab) {
+    return '<button class="cat-btn ' + (tab.id === currentCategory ? 'active' : '') + '" data-cat="' + tab.id + '">' + tab.label + '</button>';
   }).join('');
 
   Array.from(document.querySelectorAll('.cat-btn')).forEach(function (btn) {
@@ -819,7 +817,10 @@ function renderCakes(cakes) {
     return;
   }
 
-  var filtered = currentCategory === '全部' ? cakes : cakes.filter(function (c) { return c.category === currentCategory; });
+  var filtered = cakes.filter(function (c) {
+    if (currentCategory === 'promoted') return c.promoted === true;
+    return c.category === currentCategory;
+  });
 
   if (filtered.length === 0) {
     grid.innerHTML =
@@ -852,7 +853,7 @@ function renderCakes(cakes) {
       '<div class="cake-desc">' + (cake.description || '') + '</div>' +
       '<div class="cake-meta">' +
       '<span class="cake-price">' + formatPrice(cake.price) + '</span>' +
-      (cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
+      (cake.subcategory ? '<span class="cake-tag">' + cake.subcategory + '</span>' : cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
       '</div>' +
       '</div>' +
       '</div>';
@@ -951,9 +952,10 @@ function showToast(msg) {
   toast._timer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
 }
 
-// Init — 先加载数据再渲染分类和蛋糕
+// Init
+currentCategory = 'promoted';
+renderCategories();
 loadCakes().then(function (cakes) {
-  renderCategories(cakes || []);
   renderCakes(cakes);
 });
 </script>

@@ -305,7 +305,7 @@ input, textarea, select, button { font-family: inherit; }
 
 .admin-card-img {
   width: 100px;
-  min-height: 100px;
+  height: 100px;
   flex-shrink: 0;
   object-fit: cover;
   background: var(--cream-dark);
@@ -313,7 +313,7 @@ input, textarea, select, button { font-family: inherit; }
 
 .admin-card-img-placeholder {
   width: 100px;
-  min-height: 100px;
+  height: 100px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -789,16 +789,25 @@ input, textarea, select, button { font-family: inherit; }
     </div>
 
     <div class="form-group">
-      <label class="form-label">分类</label>
-      <input class="form-input" id="formCategory" placeholder="如：奶油蛋糕、千层、切块蛋糕" list="catSuggestions">
-      <datalist id="catSuggestions">
-        <option value="奶油蛋糕">
-        <option value="千层">
-        <option value="切块蛋糕">
-        <option value="慕斯蛋糕">
-        <option value="定制蛋糕">
-        <option value="纸杯蛋糕">
-      </datalist>
+      <label class="form-label">分类 <span class="required">*</span></label>
+      <select class="form-input" id="formCategory">
+        <option value="奶油蛋糕">🎂 奶油蛋糕</option>
+        <option value="甜点下午茶">🍪 甜点下午茶</option>
+        <option value="宴会甜品">🎉 宴会甜品</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">品种（可选）</label>
+      <input class="form-input" id="formSubcategory" placeholder="如：千层、提拉米苏、雪媚娘、蛋黄酥" maxlength="20">
+      <div class="form-hint">显示在卡片上的绿色标签，如不填则显示分类名称</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="formPromoted" style="width:16px;height:16px;accent-color:var(--green)">
+        <span>标记为当季主推 🏆</span>
+      </label>
     </div>
 
     <div class="form-group">
@@ -1027,7 +1036,7 @@ function renderCakeList(cakes) {
         : '<div class="admin-card-img-placeholder">🎂</div>') +
       '<div class="admin-card-body">' +
       '<div class="admin-card-name">' + cake.name + '</div>' +
-      (cake.category ? '<span class="admin-card-category">' + cake.category + '</span>' : '') +
+      (cake.subcategory ? '<span class="admin-card-category">' + cake.subcategory + '</span>' : cake.category ? '<span class="admin-card-category">' + cake.category + '</span>' : '') +
       '<div class="admin-card-price">¥' + cake.price + '</div>' +
       '<div class="admin-card-desc">' + (cake.description || '') + '</div>' +
       '</div>' +
@@ -1093,7 +1102,9 @@ function openAddForm() {
   document.getElementById('formSubmit').textContent = '保存';
   document.getElementById('formName').value = '';
   document.getElementById('formPrice').value = '';
-  document.getElementById('formCategory').value = '';
+  document.getElementById('formCategory').value = '奶油蛋糕';
+  document.getElementById('formSubcategory').value = '';
+  document.getElementById('formPromoted').checked = false;
   document.getElementById('formDesc').value = '';
   document.getElementById('formBadge').value = '';
   document.getElementById('formImgUrl').value = '';
@@ -1114,7 +1125,9 @@ async function openEditForm(id) {
   document.getElementById('formSubmit').textContent = '更新';
   document.getElementById('formName').value = cake.name || '';
   document.getElementById('formPrice').value = cake.price || '';
-  document.getElementById('formCategory').value = cake.category || '';
+  document.getElementById('formCategory').value = cake.category || '奶油蛋糕';
+  document.getElementById('formSubcategory').value = cake.subcategory || '';
+  document.getElementById('formPromoted').checked = !!cake.promoted;
   document.getElementById('formDesc').value = cake.description || '';
   document.getElementById('formBadge').value = cake.badge || '';
   document.getElementById('formImgUrl').value = '';
@@ -1134,7 +1147,9 @@ function closeForm() {
 async function handleFormSubmit() {
   var name = document.getElementById('formName').value.trim();
   var price = parseFloat(document.getElementById('formPrice').value) || 0;
-  var category = document.getElementById('formCategory').value.trim();
+  var category = document.getElementById('formCategory').value;
+  var subcategory = document.getElementById('formSubcategory').value.trim();
+  var promoted = document.getElementById('formPromoted').checked;
   var description = document.getElementById('formDesc').value.trim();
   var badge = document.getElementById('formBadge').value.trim();
   var images = currentImages.slice();
@@ -1142,7 +1157,7 @@ async function handleFormSubmit() {
 
   if (!name) { showToast('请输入蛋糕名称'); return; }
 
-  var data = { name: name, price: price, category: category, description: description, badge: badge, image_url: image_url, images: images };
+  var data = { name: name, price: price, category: category, subcategory: subcategory, promoted: promoted, description: description, badge: badge, image_url: image_url, images: images };
   showLoading();
 
   if (editingId) {
@@ -1236,14 +1251,16 @@ async function restoreSamples() {
 
   var baseUrl = 'https://images.unsplash.com/photo-';
   var samples = [
-    { name: '莓果森林', price: 268, category: '奶油蛋糕', description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气推荐', image_url: baseUrl + '1565958011703-44f9829ba187?w=400&q=80', images: [baseUrl + '1565958011703-44f9829ba187?w=400&q=80', baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 1 },
-    { name: '日式抹茶千层', price: 298, category: '千层', description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '', image_url: baseUrl + '1571115177098-24ec42ed204d?w=400&q=80', images: [baseUrl + '1571115177098-24ec42ed204d?w=400&q=80'], sort_order: 2 },
-    { name: '玫瑰荔枝', price: 328, category: '奶油蛋糕', description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: baseUrl + '1578985545062-69928b1d9587?w=400&q=80', images: [baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 3 },
-    { name: '经典提拉米苏', price: 248, category: '切块蛋糕', description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: baseUrl + '1556217477-d325251ece38?w=400&q=80', images: [baseUrl + '1556217477-d325251ece38?w=400&q=80'], sort_order: 4 },
-    { name: '柠檬天使', price: 218, category: '切块蛋糕', description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品', image_url: baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80', images: [baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80'], sort_order: 5 },
-    { name: '黑森林', price: 288, category: '奶油蛋糕', description: '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', badge: '', image_url: baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80', images: [baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80'], sort_order: 6 },
-    { name: '芒果椰子', price: 258, category: '奶油蛋糕', description: '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', badge: '', image_url: baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80', images: [baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80'], sort_order: 7 },
-    { name: '法式巧克力慕斯', price: 318, category: '切块蛋糕', description: '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', badge: '', image_url: baseUrl + '1542826438-bd32f43d626f?w=400&q=80', images: [baseUrl + '1542826438-bd32f43d626f?w=400&q=80'], sort_order: 8 }
+    { name: '莓果森林', price: 268, category: '奶油蛋糕', subcategory: '水果蛋糕', promoted: true, description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气推荐', image_url: baseUrl + '1565958011703-44f9829ba187?w=400&q=80', images: [baseUrl + '1565958011703-44f9829ba187?w=400&q=80', baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 1 },
+    { name: '日式抹茶千层', price: 298, category: '甜点下午茶', subcategory: '千层', promoted: true, description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '', image_url: baseUrl + '1571115177098-24ec42ed204d?w=400&q=80', images: [baseUrl + '1571115177098-24ec42ed204d?w=400&q=80'], sort_order: 2 },
+    { name: '玫瑰荔枝', price: 328, category: '奶油蛋糕', subcategory: '水果蛋糕', promoted: false, description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: baseUrl + '1578985545062-69928b1d9587?w=400&q=80', images: [baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 3 },
+    { name: '经典提拉米苏', price: 248, category: '甜点下午茶', subcategory: '提拉米苏', promoted: true, description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: baseUrl + '1556217477-d325251ece38?w=400&q=80', images: [baseUrl + '1556217477-d325251ece38?w=400&q=80'], sort_order: 4 },
+    { name: '柠檬天使', price: 218, category: '甜点下午茶', subcategory: '切块蛋糕', promoted: false, description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品', image_url: baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80', images: [baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80'], sort_order: 5 },
+    { name: '黑森林', price: 288, category: '奶油蛋糕', subcategory: '奶油蛋糕', promoted: false, description: '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', badge: '', image_url: baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80', images: [baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80'], sort_order: 6 },
+    { name: '芒果椰子', price: 258, category: '奶油蛋糕', subcategory: '水果蛋糕', promoted: false, description: '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', badge: '', image_url: baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80', images: [baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80'], sort_order: 7 },
+    { name: '法式巧克力慕斯', price: 318, category: '甜点下午茶', subcategory: '慕斯蛋糕', promoted: false, description: '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', badge: '', image_url: baseUrl + '1542826438-bd32f43d626f?w=400&q=80', images: [baseUrl + '1542826438-bd32f43d626f?w=400&q=80'], sort_order: 8 },
+    { name: '蛋黄酥礼盒', price: 128, category: '甜点下午茶', subcategory: '蛋黄酥', promoted: true, description: '手工酥皮层层起酥，红豆沙包裹咸蛋黄，一口酥香', badge: '新品', image_url: '', images: [], sort_order: 9 },
+    { name: '雪媚娘', price: 68, category: '甜点下午茶', subcategory: '雪媚娘', promoted: true, description: '冰皮软糯拉丝，包裹轻盈奶油和新鲜水果，冷藏后口感更佳', badge: '', image_url: '', images: [], sort_order: 10 }
   ];
 
   var errors = 0;
