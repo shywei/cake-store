@@ -298,6 +298,19 @@ a { text-decoration: none; color: inherit; }
   background: var(--coral);
 }
 
+.cake-offer {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #e74c3c, #e67e22);
+  box-shadow: 0 2px 6px rgba(231, 76, 60, 0.35);
+}
+
 .cake-info {
   padding: 12px 14px 14px;
 }
@@ -778,7 +791,7 @@ function getCakeImages(cake) {
 }
 
 function formatPrice(price) {
-  if (!price || price <= 0) return '咨询价';
+  if (!price || price <= 0) return '';
   return '¥' + price + ' <span class="cake-price-unit">/个</span>';
 }
 
@@ -853,13 +866,14 @@ function renderCakes(cakes) {
           : '<img class="cake-img lazy" data-src="' + firstImg + '" alt="' + cake.name + '">')
         : '<div class="cake-img-placeholder">🎂</div>') +
       (cake.badge ? '<span class="cake-badge">' + cake.badge + '</span>' : '') +
+      (cake.subcategory ? '<span class="cake-offer">🔥 ' + cake.subcategory + '</span>' : '') +
       '</div>' +
       '<div class="cake-info">' +
       '<div class="cake-name">' + cake.name + '</div>' +
       '<div class="cake-desc">' + (cake.description || '') + '</div>' +
       '<div class="cake-meta">' +
       '<span class="cake-price">' + formatPrice(cake.price) + '</span>' +
-      (cake.subcategory ? '<span class="cake-tag">' + cake.subcategory + '</span>' : cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
+      (cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
       '</div>' +
       '</div>' +
       '</div>';

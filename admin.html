@@ -784,11 +784,6 @@ input, textarea, select, button { font-family: inherit; }
     </div>
 
     <div class="form-group">
-      <label class="form-label">价格 (元) <span class="required">*</span></label>
-      <input class="form-input" id="formPrice" type="number" min="1" step="0.01" placeholder="如：268">
-    </div>
-
-    <div class="form-group">
       <label class="form-label">分类 <span class="required">*</span></label>
       <select class="form-input" id="formCategory">
         <option value="奶油蛋糕">🎂 奶油蛋糕</option>
@@ -798,16 +793,24 @@ input, textarea, select, button { font-family: inherit; }
     </div>
 
     <div class="form-group">
-      <label class="form-label">品种（可选）</label>
-      <input class="form-input" id="formSubcategory" placeholder="如：千层、提拉米苏、雪媚娘、蛋黄酥" maxlength="20">
-      <div class="form-hint">显示在卡片上的绿色标签，如不填则显示分类名称</div>
+      <label class="form-label">价格 (元)</label>
+      <input class="form-input" id="formPrice" type="number" min="0" step="0.01" placeholder="留空则显示咨询价">
     </div>
 
     <div class="form-group">
-      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="formPromoted" style="width:16px;height:16px;accent-color:var(--green)">
-        <span>标记为当季主推 🏆</span>
-      </label>
+      <label class="form-label">限时优惠标签（可选）</label>
+      <input class="form-input" id="formSubcategory" placeholder="如：限时8折、买一送一、即将售罄" maxlength="20">
+      <div class="form-hint">显示在图片右下角，不填则不显示</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">左上角标签（可选）</label>
+      <select class="form-input" id="formBadge">
+        <option value="">不显示</option>
+        <option value="人气爆品">人气爆品</option>
+        <option value="季节限定">季节限定</option>
+        <option value="新品推荐">新品推荐</option>
+      </select>
     </div>
 
     <div class="form-group">
@@ -816,8 +819,10 @@ input, textarea, select, button { font-family: inherit; }
     </div>
 
     <div class="form-group">
-      <label class="form-label">角标标签（可选）</label>
-      <input class="form-input" id="formBadge" placeholder="如：人气推荐、新品、限时优惠">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="formPromoted" style="width:16px;height:16px;accent-color:var(--green)">
+        <span>标记为当季主推 🏆</span>
+      </label>
     </div>
 
     <div class="form-group">
@@ -1036,7 +1041,8 @@ function renderCakeList(cakes) {
         : '<div class="admin-card-img-placeholder">🎂</div>') +
       '<div class="admin-card-body">' +
       '<div class="admin-card-name">' + cake.name + '</div>' +
-      (cake.subcategory ? '<span class="admin-card-category">' + cake.subcategory + '</span>' : cake.category ? '<span class="admin-card-category">' + cake.category + '</span>' : '') +
+      (cake.category ? '<span class="admin-card-category">' + cake.category + '</span>' : '') +
+      (cake.subcategory ? '<span style="font-size:10px;color:var(--coral);margin-left:4px">🔥' + cake.subcategory + '</span>' : '') +
       '<div class="admin-card-price">¥' + cake.price + '</div>' +
       '<div class="admin-card-desc">' + (cake.description || '') + '</div>' +
       '</div>' +
