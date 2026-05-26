@@ -992,6 +992,35 @@ a { text-decoration: none; color: inherit; }
 
 <div class="toast" id="toast"></div>
 
+<!-- Share Action Sheet -->
+<div class="share-sheet-overlay" id="shareSheet">
+  <div class="share-sheet">
+    <div class="share-sheet-title">分享店铺</div>
+    <div class="share-sheet-options">
+      <button class="share-sheet-btn" id="shareCopyLink">
+        <span class="share-sheet-icon">🔗</span>
+        <span class="share-sheet-label">复制链接</span>
+      </button>
+      <button class="share-sheet-btn" id="shareGeneratePoster">
+        <span class="share-sheet-icon">🖼️</span>
+        <span class="share-sheet-label">生成海报</span>
+      </button>
+    </div>
+    <button class="share-sheet-cancel">取消</button>
+  </div>
+</div>
+
+<!-- Share Poster Overlay -->
+<div class="poster-overlay" id="posterOverlay">
+  <div class="poster-container">
+    <div class="poster-img-wrap">
+      <canvas id="posterCanvas"></canvas>
+    </div>
+    <p class="poster-hint">长按图片保存到手机</p>
+    <button class="poster-close" id="posterClose">关闭</button>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // 配置 - 部署前替换为你的 Supabase 项目信息
@@ -1435,33 +1464,5 @@ loadCakes().then(function (cakes) {
 });
 </script>
 
-<!-- Share Action Sheet -->
-<div class="share-sheet-overlay" id="shareSheet">
-  <div class="share-sheet">
-    <div class="share-sheet-title">分享店铺</div>
-    <div class="share-sheet-options">
-      <button class="share-sheet-btn" id="shareCopyLink">
-        <span class="share-sheet-icon">🔗</span>
-        <span class="share-sheet-label">复制链接</span>
-      </button>
-      <button class="share-sheet-btn" id="shareGeneratePoster">
-        <span class="share-sheet-icon">🖼️</span>
-        <span class="share-sheet-label">生成海报</span>
-      </button>
-    </div>
-    <button class="share-sheet-cancel">取消</button>
-  </div>
-</div>
-
-<!-- Share Poster Overlay -->
-<div class="poster-overlay" id="posterOverlay">
-  <div class="poster-container">
-    <div class="poster-img-wrap">
-      <canvas id="posterCanvas"></canvas>
-    </div>
-    <p class="poster-hint">长按图片保存到手机</p>
-    <button class="poster-close" id="posterClose">关闭</button>
-  </div>
-</div>
 </body>
 </html>
