@@ -268,9 +268,14 @@ input, textarea, select, button { font-family: inherit; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   display: flex;
+  flex-direction: column;
   overflow: hidden;
   margin-bottom: 12px;
   transition: var(--transition);
+}
+
+.admin-card-main {
+  display: flex;
 }
 
 .admin-card-img {
@@ -339,31 +344,31 @@ input, textarea, select, button { font-family: inherit; }
 
 .admin-card-actions {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 10px 10px 0;
-  flex-shrink: 0;
+  border-top: 1px solid var(--cream-dark);
 }
 
 .admin-card-btn {
-  width: 32px;
-  height: 32px;
+  flex: 1;
+  height: 40px;
   border: none;
-  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px;
   transition: var(--transition);
+  background: var(--white);
+  color: var(--text-light);
 }
 
-.admin-card-btn:active { transform: scale(0.9); }
+.admin-card-btn + .admin-card-btn { border-left: 1px solid var(--cream-dark); }
 
-.admin-card-btn.edit { background: var(--green-light); color: var(--green); }
+.admin-card-btn:active { background: var(--cream-dark); }
+
+.admin-card-btn.edit { color: var(--green); font-size: 15px; }
+.admin-card-btn.delete { background: var(--red); color: white; font-size: 15px; }
 .admin-card-btn.up,
-.admin-card-btn.down { background: var(--cream-dark); color: var(--brown); font-size: 12px; }
-.admin-card-btn.delete { background: #FDE8E4; color: var(--red); }
+.admin-card-btn.down { color: var(--brown); font-size: 13px; }
 
 /* Empty admin state */
 .admin-empty {
@@ -783,7 +788,7 @@ input, textarea, select, button { font-family: inherit; }
 	
     <div class="form-group">
       <label class="form-label">价格 (元)</label>
-      <input class="form-input" id="formPrice" type="number" min="0" step="0.01" placeholder="留空则显示咨询价">
+      <input class="form-input" id="formPrice" type="number" min="0" step="0.01" placeholder="留空则不显示价格">
     </div>
 
     <div class="form-group">
@@ -809,7 +814,7 @@ input, textarea, select, button { font-family: inherit; }
 <!-- Confirm Dialog -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
-    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-icon" id="confirmIcon">🗑️</div>
     <div class="confirm-text" id="confirmText">确定要删除这个产品吗？</div>
     <div class="confirm-actions">
       <button class="btn-cancel" id="confirmCancel">取消</button>
@@ -1005,6 +1010,7 @@ function renderCakeList(cakes) {
 
   cakeList.innerHTML = cakes.map(function (cake, i) {
     return '<div class="admin-card">' +
+      '<div class="admin-card-main">' +
       (cake.image_url
         ? '<img class="admin-card-img" src="' + cake.image_url + '" alt="' + cake.name + '" onerror="this.outerHTML=\'<div class=\\\\\'admin-card-img-placeholder\\\\\'>🎂</div>\'">'
         : '<div class="admin-card-img-placeholder">🎂</div>') +
@@ -1015,11 +1021,12 @@ function renderCakeList(cakes) {
       '<div class="admin-card-price">¥' + cake.price + '</div>' +
       '<div class="admin-card-desc">' + (cake.description || '') + '</div>' +
       '</div>' +
+      '</div>' +
       '<div class="admin-card-actions">' +
-      '<button class="admin-card-btn up"' + (i === 0 ? ' style="opacity:0.2;pointer-events:none"' : '') + ' data-id="' + cake.id + '" title="上移">⬆️</button>' +
-      '<button class="admin-card-btn down"' + (i === cakes.length - 1 ? ' style="opacity:0.2;pointer-events:none"' : '') + ' data-id="' + cake.id + '" title="下移">⬇️</button>' +
       '<button class="admin-card-btn edit" data-id="' + cake.id + '" title="编辑">✏️</button>' +
       '<button class="admin-card-btn delete" data-id="' + cake.id + '" title="删除">🗑️</button>' +
+      '<button class="admin-card-btn up"' + (i === 0 ? ' style="opacity:0.3;pointer-events:none"' : '') + ' data-id="' + cake.id + '" title="上移">⬆️</button>' +
+      '<button class="admin-card-btn down"' + (i === cakes.length - 1 ? ' style="opacity:0.3;pointer-events:none"' : '') + ' data-id="' + cake.id + '" title="下移">⬇️</button>' +
       '</div>' +
       '</div>';
   }).join('');
@@ -1208,13 +1215,17 @@ document.getElementById('urlAddBtn').addEventListener('click', function () {
   document.getElementById('formImgUrl').value = '';
 });
 
-// ----- Delete -----
+// ----- Confirm (shared for delete & restore) -----
 var deleteTargetId = null;
+var confirmCallback = null;
 
 function promptDelete(id) {
   deleteTargetId = id;
+  confirmCallback = doConfirmDelete;
   fetchCakes().then(function (cakes) {
     var cake = cakes.find(function (c) { return c.id === id; });
+    document.getElementById('confirmIcon').textContent = '🗑️';
+    document.getElementById('confirmOk').textContent = '删除';
     document.getElementById('confirmText').textContent = '确定要删除「' + (cake ? cake.name : '') + '」吗？';
     document.getElementById('confirmOverlay').classList.add('open');
   });
@@ -1223,11 +1234,31 @@ function promptDelete(id) {
 function closeConfirm() {
   document.getElementById('confirmOverlay').classList.remove('open');
   deleteTargetId = null;
+  confirmCallback = null;
+}
+
+async function deleteStorageImages(cake) {
+  var paths = [];
+  if (cake.images && cake.images.length > 0) {
+    paths = cake.images.map(function (url) {
+      var parts = url.split('/cake-images/');
+      return parts.length > 1 ? parts[1] : null;
+    }).filter(Boolean);
+  } else if (cake.image_url) {
+    var parts = cake.image_url.split('/cake-images/');
+    if (parts.length > 1) paths = [parts[1]];
+  }
+  for (var i = 0; i < paths.length; i++) {
+    await sb.storage.from('cake-images').remove([paths[i]]);
+  }
 }
 
 async function doConfirmDelete() {
   if (!deleteTargetId) return;
   showLoading();
+  var cakes = await fetchCakes();
+  var cake = cakes.find(function (c) { return c.id === deleteTargetId; });
+  if (cake) await deleteStorageImages(cake);
   var result = await removeCake(deleteTargetId);
   hideLoading();
   closeConfirm();
@@ -1237,23 +1268,32 @@ async function doConfirmDelete() {
 }
 
 // ----- Restore samples -----
-async function restoreSamples() {
+async function doRestoreSamples() {
   showLoading();
-  // Delete all existing
+  closeConfirm();
+
+  // 1. Delete all storage images
+  var existing = await fetchCakes();
+  for (var i = 0; i < existing.length; i++) {
+    await deleteStorageImages(existing[i]);
+  }
+
+  // 2. Clear DB
   await sb.from('cakes').delete().neq('id', 0);
 
+  // 3. Insert samples
   var baseUrl = 'https://images.unsplash.com/photo-';
   var samples = [
-    { name: '莓果森林', price: 268, category: '奶油蛋糕', subcategory: '水果蛋糕', promoted: true, description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气推荐', image_url: baseUrl + '1565958011703-44f9829ba187?w=400&q=80', images: [baseUrl + '1565958011703-44f9829ba187?w=400&q=80', baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 1 },
-    { name: '日式抹茶千层', price: 298, category: '甜点下午茶', subcategory: '千层', promoted: true, description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '', image_url: baseUrl + '1571115177098-24ec42ed204d?w=400&q=80', images: [baseUrl + '1571115177098-24ec42ed204d?w=400&q=80'], sort_order: 2 },
-    { name: '玫瑰荔枝', price: 328, category: '奶油蛋糕', subcategory: '水果蛋糕', promoted: false, description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: baseUrl + '1578985545062-69928b1d9587?w=400&q=80', images: [baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 3 },
-    { name: '经典提拉米苏', price: 248, category: '甜点下午茶', subcategory: '提拉米苏', promoted: true, description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: baseUrl + '1556217477-d325251ece38?w=400&q=80', images: [baseUrl + '1556217477-d325251ece38?w=400&q=80'], sort_order: 4 },
-    { name: '柠檬天使', price: 218, category: '甜点下午茶', subcategory: '切块蛋糕', promoted: false, description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品', image_url: baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80', images: [baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80'], sort_order: 5 },
-    { name: '黑森林', price: 288, category: '奶油蛋糕', subcategory: '奶油蛋糕', promoted: false, description: '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', badge: '', image_url: baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80', images: [baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80'], sort_order: 6 },
-    { name: '芒果椰子', price: 258, category: '奶油蛋糕', subcategory: '水果蛋糕', promoted: false, description: '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', badge: '', image_url: baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80', images: [baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80'], sort_order: 7 },
-    { name: '法式巧克力慕斯', price: 318, category: '甜点下午茶', subcategory: '慕斯蛋糕', promoted: false, description: '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', badge: '', image_url: baseUrl + '1542826438-bd32f43d626f?w=400&q=80', images: [baseUrl + '1542826438-bd32f43d626f?w=400&q=80'], sort_order: 8 },
-    { name: '蛋黄酥礼盒', price: 128, category: '甜点下午茶', subcategory: '蛋黄酥', promoted: true, description: '手工酥皮层层起酥，红豆沙包裹咸蛋黄，一口酥香', badge: '新品', image_url: '', images: [], sort_order: 9 },
-    { name: '雪媚娘', price: 68, category: '甜点下午茶', subcategory: '雪媚娘', promoted: true, description: '冰皮软糯拉丝，包裹轻盈奶油和新鲜水果，冷藏后口感更佳', badge: '', image_url: '', images: [], sort_order: 10 }
+    { name: '莓果森林', price: 268, category: '奶油蛋糕', subcategory: '限时特惠', promoted: true, description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气爆品', image_url: baseUrl + '1565958011703-44f9829ba187?w=400&q=80', images: [baseUrl + '1565958011703-44f9829ba187?w=400&q=80', baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 1 },
+    { name: '日式抹茶千层', price: 298, category: '甜点下午茶', subcategory: '', promoted: true, description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '季节限定', image_url: baseUrl + '1571115177098-24ec42ed204d?w=400&q=80', images: [baseUrl + '1571115177098-24ec42ed204d?w=400&q=80'], sort_order: 2 },
+    { name: '玫瑰荔枝', price: 328, category: '奶油蛋糕', subcategory: '', promoted: false, description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: baseUrl + '1578985545062-69928b1d9587?w=400&q=80', images: [baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 3 },
+    { name: '经典提拉米苏', price: 248, category: '甜点下午茶', subcategory: '', promoted: true, description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: baseUrl + '1556217477-d325251ece38?w=400&q=80', images: [baseUrl + '1556217477-d325251ece38?w=400&q=80'], sort_order: 4 },
+    { name: '柠檬天使', price: 218, category: '甜点下午茶', subcategory: '', promoted: false, description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品推荐', image_url: baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80', images: [baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80'], sort_order: 5 },
+    { name: '黑森林', price: 288, category: '奶油蛋糕', subcategory: '', promoted: false, description: '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', badge: '', image_url: baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80', images: [baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80'], sort_order: 6 },
+    { name: '芒果椰子', price: 258, category: '奶油蛋糕', subcategory: '', promoted: false, description: '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', badge: '', image_url: baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80', images: [baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80'], sort_order: 7 },
+    { name: '法式巧克力慕斯', price: 318, category: '甜点下午茶', subcategory: '限时特惠', promoted: false, description: '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', badge: '', image_url: baseUrl + '1542826438-bd32f43d626f?w=400&q=80', images: [baseUrl + '1542826438-bd32f43d626f?w=400&q=80'], sort_order: 8 },
+    { name: '蛋黄酥礼盒', price: 128, category: '甜点下午茶', subcategory: '', promoted: true, description: '手工酥皮层层起酥，红豆沙包裹咸蛋黄，一口酥香', badge: '新品推荐', image_url: '', images: [], sort_order: 9 },
+    { name: '雪媚娘', price: 68, category: '甜点下午茶', subcategory: '', promoted: true, description: '冰皮软糯拉丝，包裹轻盈奶油和新鲜水果，冷藏后口感更佳', badge: '', image_url: '', images: [], sort_order: 10 }
   ];
 
   var errors = 0;
@@ -1271,13 +1311,22 @@ async function restoreSamples() {
   }
 }
 
+document.getElementById('sampleBtn').addEventListener('click', function () {
+  document.getElementById('confirmIcon').textContent = '📥';
+  document.getElementById('confirmText').textContent = '确定要恢复示例数据吗？所有现有数据和图片将被清除！';
+  document.getElementById('confirmOk').textContent = '恢复';
+  confirmCallback = doRestoreSamples;
+  document.getElementById('confirmOverlay').classList.add('open');
+});
+
 // ----- Event bindings -----
 document.getElementById('addBtn').addEventListener('click', openAddForm);
-document.getElementById('sampleBtn').addEventListener('click', restoreSamples);
 document.getElementById('formCancel').addEventListener('click', closeForm);
 document.getElementById('formSubmit').addEventListener('click', handleFormSubmit);
 document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
-document.getElementById('confirmOk').addEventListener('click', doConfirmDelete);
+document.getElementById('confirmOk').addEventListener('click', function () {
+  if (confirmCallback) confirmCallback();
+});
 
 document.getElementById('formOverlay').addEventListener('click', function (e) {
   if (e.target === document.getElementById('formOverlay')) closeForm();
