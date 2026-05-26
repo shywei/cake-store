@@ -520,6 +520,59 @@ input, textarea, select, button { font-family: inherit; }
   text-align: center;
 }
 
+.form-images {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.form-image-slot {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--cream-dark);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--text-lighter);
+  cursor: pointer;
+  border: 1.5px dashed var(--cream-dark);
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.form-image-slot.has-img {
+  border-color: transparent;
+}
+
+.form-image-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.form-image-slot .remove-img {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.45);
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .form-img-upload-row {
   display: flex;
   gap: 10px;
@@ -759,18 +812,14 @@ input, textarea, select, button { font-family: inherit; }
     </div>
 
     <div class="form-group">
-      <label class="form-label">蛋糕图片</label>
+      <label class="form-label">蛋糕图片（最多 3 张）</label>
+      <div class="form-images" id="formImages"></div>
+      <input type="file" accept="image/*" id="fileInput" style="display:none">
       <div class="form-img-upload-row">
-        <input class="form-input" id="formImgUrl" placeholder="粘贴图片网址" oninput="previewImg(this.value)">
-        <label class="form-img-upload-btn" id="uploadBtnLabel">
-          📁 本地上传
-          <input type="file" accept="image/*" id="fileInput" style="display:none">
-        </label>
+        <input class="form-input" id="formImgUrl" placeholder="或粘贴图片网址">
+        <button class="form-img-upload-btn" id="urlAddBtn">添加</button>
       </div>
-      <div class="form-hint">支持粘贴网络图片链接，或从手机相册上传照片</div>
-      <div class="form-img-preview" id="imgPreview">
-        <span class="placeholder">暂无图片</span>
-      </div>
+      <div class="form-hint">点击 + 从相册选择，或在输入框粘贴图片链接后点"添加"</div>
       <div class="form-img-upload-progress" id="uploadProgress"></div>
     </div>
 
@@ -838,7 +887,8 @@ async function doLogout() {
 
 // ----- App -----
 var editingId = null;
-var currentImgData = '';
+var currentImages = [];
+var activeSlotIndex = -1;
 
 async function initApp() {
   showLoading();
@@ -1006,6 +1056,37 @@ function renderCakeList(cakes) {
 }
 
 // ----- Form -----
+function renderImageSlots() {
+  var container = document.getElementById('formImages');
+  container.innerHTML = '';
+  for (var i = 0; i < 3; i++) {
+    var div = document.createElement('div');
+    var hasImg = i < currentImages.length;
+    div.className = 'form-image-slot' + (hasImg ? ' has-img' : ' empty-slot');
+    div.setAttribute('data-index', i);
+    if (hasImg) {
+      div.innerHTML = '<img src="' + currentImages[i] + '" alt="蛋糕图 ' + (i + 1) + '"><button class="remove-img" data-index="' + i + '">✕</button>';
+    } else {
+      div.textContent = '+';
+    }
+    container.appendChild(div);
+  }
+  Array.from(container.querySelectorAll('.empty-slot')).forEach(function (slot) {
+    slot.addEventListener('click', function () {
+      activeSlotIndex = parseInt(this.getAttribute('data-index'));
+      document.getElementById('fileInput').click();
+    });
+  });
+  Array.from(container.querySelectorAll('.remove-img')).forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var idx = parseInt(this.getAttribute('data-index'));
+      currentImages.splice(idx, 1);
+      renderImageSlots();
+    });
+  });
+}
+
 function openAddForm() {
   editingId = null;
   document.getElementById('formTitle').textContent = '新增蛋糕';
@@ -1018,8 +1099,8 @@ function openAddForm() {
   document.getElementById('formImgUrl').value = '';
   document.getElementById('formEditId').value = '';
   document.getElementById('uploadProgress').textContent = '';
-  currentImgData = '';
-  document.getElementById('imgPreview').innerHTML = '<span class="placeholder">暂无图片</span>';
+  currentImages = [];
+  renderImageSlots();
   document.getElementById('formOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1036,11 +1117,11 @@ async function openEditForm(id) {
   document.getElementById('formCategory').value = cake.category || '';
   document.getElementById('formDesc').value = cake.description || '';
   document.getElementById('formBadge').value = cake.badge || '';
-  document.getElementById('formImgUrl').value = cake.image_url || '';
+  document.getElementById('formImgUrl').value = '';
   document.getElementById('formEditId').value = id;
   document.getElementById('uploadProgress').textContent = '';
-  currentImgData = cake.image_url || '';
-  previewImg(cake.image_url || '');
+  currentImages = (cake.images && cake.images.length > 0) ? cake.images.slice() : (cake.image_url ? [cake.image_url] : []);
+  renderImageSlots();
   document.getElementById('formOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1052,16 +1133,16 @@ function closeForm() {
 
 async function handleFormSubmit() {
   var name = document.getElementById('formName').value.trim();
-  var price = parseFloat(document.getElementById('formPrice').value);
+  var price = parseFloat(document.getElementById('formPrice').value) || 0;
   var category = document.getElementById('formCategory').value.trim();
   var description = document.getElementById('formDesc').value.trim();
   var badge = document.getElementById('formBadge').value.trim();
-  var image_url = currentImgData;
+  var images = currentImages.slice();
+  var image_url = images.length > 0 ? images[0] : '';
 
   if (!name) { showToast('请输入蛋糕名称'); return; }
-  if (!price || price <= 0) { showToast('请输入有效价格'); return; }
 
-  var data = { name: name, price: price, category: category, description: description, badge: badge, image_url: image_url };
+  var data = { name: name, price: price, category: category, description: description, badge: badge, image_url: image_url, images: images };
   showLoading();
 
   if (editingId) {
@@ -1082,15 +1163,6 @@ async function handleFormSubmit() {
   }
 }
 
-function previewImg(url) {
-  var preview = document.getElementById('imgPreview');
-  if (!url) {
-    preview.innerHTML = '<span class="placeholder">暂无图片</span>';
-    return;
-  }
-  preview.innerHTML = '<img src="' + url + '" alt="预览" onerror="this.outerHTML=\'<span class=\\\\\'placeholder\\\\\'>图片加载失败</span>\'">';
-}
-
 // File upload handling
 document.getElementById('fileInput').addEventListener('change', async function (e) {
   var file = e.target.files[0];
@@ -1103,9 +1175,11 @@ document.getElementById('fileInput').addEventListener('change', async function (
 
   try {
     var url = await uploadImageToStorage(file);
-    currentImgData = url;
+    if (currentImages.length < 3) {
+      currentImages.push(url);
+      renderImageSlots();
+    }
     progress.textContent = '✅ 上传成功';
-    document.getElementById('imgPreview').innerHTML = '<img src="' + url + '" alt="预览">';
     document.getElementById('formImgUrl').value = '';
   } catch (err) {
     progress.textContent = '❌ 上传失败，请重试';
@@ -1113,8 +1187,17 @@ document.getElementById('fileInput').addEventListener('change', async function (
     console.error(err);
   }
 
-  // Reset file input so same file can be selected again
   e.target.value = '';
+});
+
+// URL add button
+document.getElementById('urlAddBtn').addEventListener('click', function () {
+  var url = document.getElementById('formImgUrl').value.trim();
+  if (!url) { showToast('请输入图片网址'); return; }
+  if (currentImages.length >= 3) { showToast('最多 3 张图片'); return; }
+  currentImages.push(url);
+  renderImageSlots();
+  document.getElementById('formImgUrl').value = '';
 });
 
 // ----- Delete -----
@@ -1151,15 +1234,16 @@ async function restoreSamples() {
   // Delete all existing
   await sb.from('cakes').delete().neq('id', 0);
 
+  var baseUrl = 'https://images.unsplash.com/photo-';
   var samples = [
-    { name: '莓果森林', price: 268, category: '奶油蛋糕', description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气推荐', image_url: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&q=80', sort_order: 1 },
-    { name: '日式抹茶千层', price: 298, category: '千层', description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '', image_url: 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=400&q=80', sort_order: 2 },
-    { name: '玫瑰荔枝', price: 328, category: '奶油蛋糕', description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80', sort_order: 3 },
-    { name: '经典提拉米苏', price: 248, category: '切块蛋糕', description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: 'https://images.unsplash.com/photo-1556217477-d325251ece38?w=400&q=80', sort_order: 4 },
-    { name: '柠檬天使', price: 218, category: '切块蛋糕', description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品', image_url: 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&q=80', sort_order: 5 },
-    { name: '黑森林', price: 288, category: '奶油蛋糕', description: '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', badge: '', image_url: 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=400&q=80', sort_order: 6 },
-    { name: '芒果椰子', price: 258, category: '奶油蛋糕', description: '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', badge: '', image_url: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a58?w=400&q=80', sort_order: 7 },
-    { name: '法式巧克力慕斯', price: 318, category: '切块蛋糕', description: '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', badge: '', image_url: 'https://images.unsplash.com/photo-1542826438-bd32f43d626f?w=400&q=80', sort_order: 8 }
+    { name: '莓果森林', price: 268, category: '奶油蛋糕', description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气推荐', image_url: baseUrl + '1565958011703-44f9829ba187?w=400&q=80', images: [baseUrl + '1565958011703-44f9829ba187?w=400&q=80', baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 1 },
+    { name: '日式抹茶千层', price: 298, category: '千层', description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '', image_url: baseUrl + '1571115177098-24ec42ed204d?w=400&q=80', images: [baseUrl + '1571115177098-24ec42ed204d?w=400&q=80'], sort_order: 2 },
+    { name: '玫瑰荔枝', price: 328, category: '奶油蛋糕', description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: baseUrl + '1578985545062-69928b1d9587?w=400&q=80', images: [baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 3 },
+    { name: '经典提拉米苏', price: 248, category: '切块蛋糕', description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: baseUrl + '1556217477-d325251ece38?w=400&q=80', images: [baseUrl + '1556217477-d325251ece38?w=400&q=80'], sort_order: 4 },
+    { name: '柠檬天使', price: 218, category: '切块蛋糕', description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品', image_url: baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80', images: [baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80'], sort_order: 5 },
+    { name: '黑森林', price: 288, category: '奶油蛋糕', description: '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', badge: '', image_url: baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80', images: [baseUrl + '1606890737304-57a1ca8a5b62?w=400&q=80'], sort_order: 6 },
+    { name: '芒果椰子', price: 258, category: '奶油蛋糕', description: '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', badge: '', image_url: baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80', images: [baseUrl + '1588195538326-c5b1e9f80a58?w=400&q=80'], sort_order: 7 },
+    { name: '法式巧克力慕斯', price: 318, category: '切块蛋糕', description: '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', badge: '', image_url: baseUrl + '1542826438-bd32f43d626f?w=400&q=80', images: [baseUrl + '1542826438-bd32f43d626f?w=400&q=80'], sort_order: 8 }
   ];
 
   var errors = 0;

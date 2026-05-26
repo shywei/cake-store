@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.cakes (
   description TEXT DEFAULT '',
   badge TEXT DEFAULT '',
   image_url TEXT DEFAULT '',
+  images JSONB DEFAULT '[]'::jsonb,
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -72,13 +73,27 @@ CREATE POLICY "Auth users can delete cake images" ON storage.objects
 -- ============================================
 -- 首批示例数据（可选，不想要就忽略）
 -- ============================================
-INSERT INTO public.cakes (name, price, category, description, badge, image_url, sort_order) VALUES
-  ('莓果森林', 268, '奶油蛋糕', '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', '人气推荐', 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&q=80', 1),
-  ('日式抹茶千层', 298, '千层', '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', '', 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=400&q=80', 2),
-  ('玫瑰荔枝', 328, '奶油蛋糕', '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', '', 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80', 3),
-  ('经典提拉米苏', 248, '切块蛋糕', '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', '', 'https://images.unsplash.com/photo-1556217477-d325251ece38?w=400&q=80', 4),
-  ('柠檬天使', 218, '切块蛋糕', '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', '新品', 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&q=80', 5),
-  ('黑森林', 288, '奶油蛋糕', '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', '', 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=400&q=80', 6),
-  ('芒果椰子', 258, '奶油蛋糕', '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', '', 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a58?w=400&q=80', 7),
-  ('法式巧克力慕斯', 318, '切块蛋糕', '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', '', 'https://images.unsplash.com/photo-1542826438-bd32f43d626f?w=400&q=80', 8)
+INSERT INTO public.cakes (name, price, category, description, badge, image_url, images, sort_order) VALUES
+  ('莓果森林', 268, '奶油蛋糕', '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', '人气推荐', 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&q=80', '["https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&q=80","https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80"]'::jsonb, 1),
+  ('日式抹茶千层', 298, '千层', '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', '', 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=400&q=80', '["https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=400&q=80"]'::jsonb, 2),
+  ('玫瑰荔枝', 328, '奶油蛋糕', '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', '', 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80', '["https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&q=80"]'::jsonb, 3),
+  ('经典提拉米苏', 248, '切块蛋糕', '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', '', 'https://images.unsplash.com/photo-1556217477-d325251ece38?w=400&q=80', '["https://images.unsplash.com/photo-1556217477-d325251ece38?w=400&q=80"]'::jsonb, 4),
+  ('柠檬天使', 218, '切块蛋糕', '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', '新品', 'https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&q=80', '["https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?w=400&q=80"]'::jsonb, 5),
+  ('黑森林', 288, '奶油蛋糕', '浓郁黑巧克力与酒渍樱桃的经典组合，微醺的甜蜜', '', 'https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=400&q=80', '["https://images.unsplash.com/photo-1606890737304-57a1ca8a5b62?w=400&q=80"]'::jsonb, 6),
+  ('芒果椰子', 258, '奶油蛋糕', '热带芒果与椰奶的完美邂逅，仿佛置身海岛度假', '', 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a58?w=400&q=80', '["https://images.unsplash.com/photo-1588195538326-c5b1e9f80a58?w=400&q=80"]'::jsonb, 7),
+  ('法式巧克力慕斯', 318, '切块蛋糕', '70%黑巧克力制作的丝滑慕斯，浓郁醇厚，入口即化', '', 'https://images.unsplash.com/photo-1542826438-bd32f43d626f?w=400&q=80', '["https://images.unsplash.com/photo-1542826438-bd32f43d626f?w=400&q=80"]'::jsonb, 8)
 ON CONFLICT DO NOTHING;
+
+-- ============================================
+-- 迁移（已有数据升级）：添加 images 字段
+-- 如果是新项目不需要执行，上面建表已包含
+-- ============================================
+ALTER TABLE public.cakes ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
+
+-- 将已有的 image_url 迁移到 images 数组
+UPDATE public.cakes
+SET images = CASE
+  WHEN image_url IS NOT NULL AND image_url != '' THEN jsonb_build_array(image_url)
+  ELSE '[]'::jsonb
+END
+WHERE images IS NULL OR images = '[]'::jsonb;

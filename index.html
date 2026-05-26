@@ -257,6 +257,15 @@ a { text-decoration: none; color: inherit; }
   background: var(--cream-dark);
 }
 
+.cake-img-wrap.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .cake-img {
   width: 100%;
   height: 100%;
@@ -420,13 +429,77 @@ a { text-decoration: none; color: inherit; }
   margin: 0 auto 16px;
 }
 
-.modal-img {
+/* Carousel */
+.modal-carousel {
+  position: relative;
   width: 100%;
   aspect-ratio: 16/10;
-  object-fit: cover;
   border-radius: var(--radius-sm);
-  margin-bottom: 16px;
+  overflow: hidden;
   background: var(--cream-dark);
+  margin-bottom: 12px;
+}
+
+.modal-carousel-track {
+  display: flex;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.modal-carousel-track::-webkit-scrollbar { display: none; }
+
+.modal-carousel-slide {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: start;
+}
+
+.modal-carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.modal-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.modal-carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cream-dark);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.modal-carousel-dot.active {
+  background: var(--green);
+  width: 18px;
+  border-radius: 3px;
+}
+
+.modal-carousel-count {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.45);
+  color: white;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  pointer-events: none;
 }
 
 .modal-name {
@@ -631,7 +704,11 @@ a { text-decoration: none; color: inherit; }
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" id="modal">
     <div class="modal-handle"></div>
-    <img class="modal-img" id="modalImg" alt="">
+    <div class="modal-carousel" id="modalCarousel">
+      <div class="modal-carousel-track" id="carouselTrack"></div>
+      <span class="modal-carousel-count" id="carouselCount">1/1</span>
+    </div>
+    <div class="modal-carousel-dots" id="carouselDots"></div>
     <h2 class="modal-name" id="modalName"></h2>
     <div class="modal-price" id="modalPrice"></div>
     <p class="modal-desc" id="modalDesc"></p>
@@ -686,6 +763,17 @@ async function loadCakes() {
     return null;
   }
   return result.data || [];
+}
+
+function getCakeImages(cake) {
+  if (cake.images && cake.images.length > 0) return cake.images;
+  if (cake.image_url) return [cake.image_url];
+  return [];
+}
+
+function formatPrice(price) {
+  if (!price || price <= 0) return '咨询价';
+  return '¥' + price + ' <span class="cake-price-unit">/个</span>';
 }
 
 function getCategories(cakes) {
@@ -746,12 +834,16 @@ function renderCakes(cakes) {
   var total = filtered.length;
 
   grid.innerHTML = filtered.map(function (cake, i) {
+    var images = getCakeImages(cake);
     var eager = i < 6 || total <= 6;
-    var hasImg = !!cake.image_url;
+    var hasImg = images.length > 0;
+    var firstImg = hasImg ? images[0] : '';
     return '<div class="cake-card" data-index="' + i + '">' +
       '<div class="cake-img-wrap">' +
       (hasImg
-        ? '<img class="cake-img' + (eager ? '' : ' lazy') + '" src="' + (eager ? cake.image_url : '') + '" data-src="' + cake.image_url + '" alt="' + cake.name + '">'
+        ? (eager
+          ? '<img class="cake-img" src="' + firstImg + '" alt="' + cake.name + '">'
+          : '<img class="cake-img lazy" data-src="' + firstImg + '" alt="' + cake.name + '">')
         : '<div class="cake-img-placeholder">🎂</div>') +
       (cake.badge ? '<span class="cake-badge">' + cake.badge + '</span>' : '') +
       '</div>' +
@@ -759,7 +851,7 @@ function renderCakes(cakes) {
       '<div class="cake-name">' + cake.name + '</div>' +
       '<div class="cake-desc">' + (cake.description || '') + '</div>' +
       '<div class="cake-meta">' +
-      '<span class="cake-price">¥' + cake.price + ' <span class="cake-price-unit">/个</span></span>' +
+      '<span class="cake-price">' + formatPrice(cake.price) + '</span>' +
       (cake.category ? '<span class="cake-tag">' + cake.category + '</span>' : '') +
       '</div>' +
       '</div>' +
@@ -776,9 +868,12 @@ function renderCakes(cakes) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           var img = entry.target;
+          var wrap = img.parentElement;
+          wrap.classList.add('loading');
           img.src = img.getAttribute('data-src');
           img.classList.remove('lazy');
-          img.onerror = function () { this.outerHTML = '<div class="cake-img-placeholder">🎂</div>'; };
+          img.onload = function () { wrap.classList.remove('loading'); };
+          img.onerror = function () { wrap.classList.remove('loading'); this.outerHTML = '<div class="cake-img-placeholder">🎂</div>'; };
           observer.unobserve(img);
         }
       });
@@ -795,9 +890,45 @@ function renderCakes(cakes) {
 }
 
 function showModal(cake) {
-  document.getElementById('modalImg').src = cake.image_url || '';
+  var images = getCakeImages(cake);
+  var track = document.getElementById('carouselTrack');
+  var dots = document.getElementById('carouselDots');
+  var count = document.getElementById('carouselCount');
+
+  track.innerHTML = images.map(function (url) {
+    return '<div class="modal-carousel-slide"><img src="' + url + '" alt="' + cake.name + '" onerror="this.alt=\'🎂\'"></div>';
+  }).join('') || '<div class="modal-carousel-slide" style="display:flex;align-items:center;justify-content:center;font-size:48px;color:var(--text-lighter)">🎂</div>';
+
+  if (images.length > 1) {
+    dots.innerHTML = images.map(function (_, i) {
+      return '<button class="modal-carousel-dot' + (i === 0 ? ' active' : '') + '" data-index="' + i + '"></button>';
+    }).join('');
+
+    count.textContent = '1/' + images.length;
+    count.style.display = 'block';
+
+    Array.from(dots.children).forEach(function (dot) {
+      dot.addEventListener('click', function () {
+        var idx = parseInt(this.getAttribute('data-index'));
+        track.children[idx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+      });
+    });
+
+    track.onscroll = function () {
+      var idx = Math.round(track.scrollLeft / track.clientWidth);
+      Array.from(dots.children).forEach(function (d, i) {
+        d.classList.toggle('active', i === idx);
+      });
+      count.textContent = (idx + 1) + '/' + images.length;
+    };
+  } else {
+    dots.innerHTML = '';
+    count.style.display = 'none';
+    track.onscroll = null;
+  }
+
   document.getElementById('modalName').textContent = cake.name;
-  document.getElementById('modalPrice').innerHTML = '¥' + cake.price + ' <span class="modal-price-unit">/个</span>';
+  document.getElementById('modalPrice').innerHTML = formatPrice(cake.price);
   document.getElementById('modalDesc').textContent = cake.description || '';
   modalOverlay.classList.add('open');
   document.body.style.overflow = 'hidden';
