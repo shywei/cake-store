@@ -798,19 +798,20 @@ input, textarea, select, button { font-family: inherit; }
     </div>
 
     <div class="form-group">
-      <label class="form-label">限时优惠标签（可选）</label>
-      <input class="form-input" id="formSubcategory" placeholder="如：限时8折、买一送一、即将售罄" maxlength="20">
-      <div class="form-hint">显示在图片右下角，不填则不显示</div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">左上角标签（可选）</label>
+      <label class="form-label">推广标签（可选）</label>
       <select class="form-input" id="formBadge">
         <option value="">不显示</option>
         <option value="人气爆品">人气爆品</option>
         <option value="季节限定">季节限定</option>
         <option value="新品推荐">新品推荐</option>
       </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="formSubcategory" style="width:16px;height:16px;accent-color:var(--coral)">
+        <span>限时特惠 🔥</span>
+      </label>
     </div>
 
     <div class="form-group">
@@ -821,7 +822,7 @@ input, textarea, select, button { font-family: inherit; }
     <div class="form-group">
       <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
         <input type="checkbox" id="formPromoted" style="width:16px;height:16px;accent-color:var(--green)">
-        <span>标记为当季主推 🏆</span>
+        <span>当季主推 🏆</span>
       </label>
     </div>
 
@@ -849,7 +850,7 @@ input, textarea, select, button { font-family: inherit; }
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
     <div class="confirm-icon">🗑️</div>
-    <div class="confirm-text" id="confirmText">确定要删除这个蛋糕吗？</div>
+    <div class="confirm-text" id="confirmText">确定要删除这个产品吗？</div>
     <div class="confirm-actions">
       <button class="btn-cancel" id="confirmCancel">取消</button>
       <button class="btn-danger" id="confirmOk">删除</button>
@@ -1042,7 +1043,7 @@ function renderCakeList(cakes) {
       '<div class="admin-card-body">' +
       '<div class="admin-card-name">' + cake.name + '</div>' +
       (cake.category ? '<span class="admin-card-category">' + cake.category + '</span>' : '') +
-      (cake.subcategory ? '<span style="font-size:10px;color:var(--coral);margin-left:4px">🔥' + cake.subcategory + '</span>' : '') +
+      (cake.subcategory ? '<span style="font-size:10px;color:var(--coral);margin-left:4px">🔥限时特惠</span>' : '') +
       '<div class="admin-card-price">¥' + cake.price + '</div>' +
       '<div class="admin-card-desc">' + (cake.description || '') + '</div>' +
       '</div>' +
@@ -1109,7 +1110,7 @@ function openAddForm() {
   document.getElementById('formName').value = '';
   document.getElementById('formPrice').value = '';
   document.getElementById('formCategory').value = '奶油蛋糕';
-  document.getElementById('formSubcategory').value = '';
+  document.getElementById('formSubcategory').checked = false;
   document.getElementById('formPromoted').checked = false;
   document.getElementById('formDesc').value = '';
   document.getElementById('formBadge').value = '';
@@ -1132,7 +1133,7 @@ async function openEditForm(id) {
   document.getElementById('formName').value = cake.name || '';
   document.getElementById('formPrice').value = cake.price || '';
   document.getElementById('formCategory').value = cake.category || '奶油蛋糕';
-  document.getElementById('formSubcategory').value = cake.subcategory || '';
+  document.getElementById('formSubcategory').checked = !!cake.subcategory;
   document.getElementById('formPromoted').checked = !!cake.promoted;
   document.getElementById('formDesc').value = cake.description || '';
   document.getElementById('formBadge').value = cake.badge || '';
@@ -1154,7 +1155,7 @@ async function handleFormSubmit() {
   var name = document.getElementById('formName').value.trim();
   var price = parseFloat(document.getElementById('formPrice').value) || 0;
   var category = document.getElementById('formCategory').value;
-  var subcategory = document.getElementById('formSubcategory').value.trim();
+  var subcategory = document.getElementById('formSubcategory').checked ? '限时特惠' : '';
   var promoted = document.getElementById('formPromoted').checked;
   var description = document.getElementById('formDesc').value.trim();
   var badge = document.getElementById('formBadge').value.trim();
