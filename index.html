@@ -1394,17 +1394,15 @@ function generatePoster() {
       correctLevel: QRCode.CorrectLevel.M
     });
     setTimeout(function () {
-      var qrImgEl = qrContainer.querySelector('img');
-      var qrSrc = qrImgEl ? qrImgEl.src : '';
+      var qrImg = qrContainer.querySelector('img');
       document.body.removeChild(qrContainer);
 
-      var ready0 = false, ready1 = false;
+      var bossQr = new Image();
+      bossQr.crossOrigin = 'anonymous';
 
-      function tryDraw() {
-        if (!ready0 || !ready1) return;
-
-        if (qrImage && qrSrc) ctx.drawImage(qrImage, startX, qrY, qrSize, qrSize);
-        ctx.drawImage(bossQrImage, startX + qrSize + gap, qrY, qrSize, qrSize);
+      function drawAll() {
+        if (qrImg) ctx.drawImage(qrImg, startX, qrY, qrSize, qrSize);
+        ctx.drawImage(bossQr, startX + qrSize + gap, qrY, qrSize, qrSize);
 
         ctx.fillStyle = '#8A8A8A';
         ctx.font = '13px "Noto Sans SC", sans-serif';
@@ -1421,23 +1419,12 @@ function generatePoster() {
         ctx.fillRect(0, H - 6, W, 6);
       }
 
-      if (qrSrc) {
-        var qrImage = new Image();
-        qrImage.onload = function () { ready0 = true; tryDraw(); };
-        qrImage.onerror = function () { ready0 = true; tryDraw(); };
-        qrImage.src = qrSrc;
-      } else {
-        ready0 = true;
-      }
+      bossQr.onload = drawAll;
+      bossQr.onerror = drawAll;
+      bossQr.src = 'https://qcqobpckzceysdxyaryu.supabase.co/storage/v1/object/public/cake-images/barcode.jpg';
 
-      var bossQrImage = new Image();
-      bossQrImage.crossOrigin = 'anonymous';
-      bossQrImage.onload = function () { ready1 = true; tryDraw(); };
-      bossQrImage.onerror = function () { ready1 = true; tryDraw(); };
-      bossQrImage.src = 'https://qcqobpckzceysdxyaryu.supabase.co/storage/v1/object/public/cake-images/barcode.jpg';
-
-      tryDraw();
-    }, 100);
+      if (bossQr.complete) drawAll();
+    }, 300);
   };
   img.onerror = function () {
     // Fallback: draw a placeholder
