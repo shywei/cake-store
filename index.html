@@ -796,16 +796,40 @@ a { text-decoration: none; color: inherit; }
   font-size: 13px;
   font-weight: 500;
   color: var(--green-dark);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.modal-contact-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.modal-contact-qr {
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.modal-contact-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .modal-contact-wechat {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--green-dark);
+}
+
+.modal-contact-hint {
+  font-size: 12px;
+  color: var(--text-light);
 }
 
 .modal-close {
@@ -981,9 +1005,12 @@ a { text-decoration: none; color: inherit; }
     <p class="modal-desc" id="modalDesc"></p>
     <div class="modal-contact">
       <div class="modal-contact-title">💬 来图定制 · 咨询 & 订购</div>
-      <div class="modal-contact-wechat">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.5 7.5L4 21l2-4.5A8.5 8.5 0 1 1 21 11.5Z"/></svg>
-        微信 y15252681059
+      <div class="modal-contact-row">
+        <img class="modal-contact-qr" src="https://qcqobpckzceysdxyaryu.supabase.co/storage/v1/object/public/cake-images/barcode.jpg" alt="老板微信">
+        <div class="modal-contact-info">
+          <div class="modal-contact-wechat">y15252681059</div>
+          <div class="modal-contact-hint">添加老板微信</div>
+        </div>
       </div>
     </div>
     <button class="modal-close" id="modalClose">关闭</button>
@@ -1346,10 +1373,14 @@ function generatePoster() {
     ctx.lineTo(W - 200, 555);
     ctx.stroke();
 
-    // QR code
-    var qrSize = 160;
-    var qrX = (W - qrSize) / 2;
-    var qrY = 585;
+    // QR codes - website + boss WeChat side by side
+    var qrSize = 140;
+    var gap = 20;
+    var totalWidth = qrSize * 2 + gap;
+    var startX = (W - totalWidth) / 2;
+    var qrY = 570;
+
+    // Generate website QR
     var qrContainer = document.createElement('div');
     qrContainer.style.position = 'absolute';
     qrContainer.style.left = '-9999px';
@@ -1363,33 +1394,49 @@ function generatePoster() {
       correctLevel: QRCode.CorrectLevel.M
     });
     setTimeout(function () {
-      var qrImg = qrContainer.querySelector('img');
-      if (qrImg) {
-        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-      }
+      var qrImgEl = qrContainer.querySelector('img');
+      var qrSrc = qrImgEl ? qrImgEl.src : '';
       document.body.removeChild(qrContainer);
 
-      // QR hint
-      ctx.fillStyle = '#8A8A8A';
-      ctx.font = '14px "Noto Sans SC", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('扫码查看更多款式', W / 2, qrY + qrSize + 28);
+      var ready0 = false, ready1 = false;
 
-      // WeChat ID
-      ctx.fillStyle = '#3D3D3D';
-      ctx.font = '18px "Noto Sans SC", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('y15252681059', W / 2, qrY + qrSize + 70);
+      function tryDraw() {
+        if (!ready0 || !ready1) return;
 
-      // WeChat hint
-      ctx.fillStyle = '#E8A090';
-      ctx.font = '14px "Noto Sans SC", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('添加老板微信', W / 2, qrY + qrSize + 94);
+        if (qrImage && qrSrc) ctx.drawImage(qrImage, startX, qrY, qrSize, qrSize);
+        ctx.drawImage(bossQrImage, startX + qrSize + gap, qrY, qrSize, qrSize);
 
-      // Bottom decorative line
-      ctx.fillStyle = '#7A9E7E';
-      ctx.fillRect(0, H - 6, W, 6);
+        ctx.fillStyle = '#8A8A8A';
+        ctx.font = '13px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('扫码查看款式', startX + qrSize / 2, qrY + qrSize + 26);
+        ctx.fillText('添加老板微信', startX + qrSize + gap + qrSize / 2, qrY + qrSize + 26);
+
+        ctx.fillStyle = '#3D3D3D';
+        ctx.font = '15px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('或搜索微信号 y15252681059', W / 2, qrY + qrSize + 64);
+
+        ctx.fillStyle = '#7A9E7E';
+        ctx.fillRect(0, H - 6, W, 6);
+      }
+
+      if (qrSrc) {
+        var qrImage = new Image();
+        qrImage.onload = function () { ready0 = true; tryDraw(); };
+        qrImage.onerror = function () { ready0 = true; tryDraw(); };
+        qrImage.src = qrSrc;
+      } else {
+        ready0 = true;
+      }
+
+      var bossQrImage = new Image();
+      bossQrImage.crossOrigin = 'anonymous';
+      bossQrImage.onload = function () { ready1 = true; tryDraw(); };
+      bossQrImage.onerror = function () { ready1 = true; tryDraw(); };
+      bossQrImage.src = 'https://qcqobpckzceysdxyaryu.supabase.co/storage/v1/object/public/cake-images/barcode.jpg';
+
+      tryDraw();
     }, 100);
   };
   img.onerror = function () {
