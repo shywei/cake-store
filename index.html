@@ -1042,6 +1042,7 @@ a { text-decoration: none; color: inherit; }
   <div class="poster-container">
     <div class="poster-img-wrap">
       <canvas id="posterCanvas"></canvas>
+      <img id="posterImg" style="display:none;width:100%;height:auto;border-radius:8px;">
     </div>
     <p class="poster-hint">长按图片保存到手机</p>
     <button class="poster-close" id="posterClose">关闭</button>
@@ -1404,6 +1405,12 @@ function generatePoster() {
 
       ctx.fillStyle = '#7A9E7E';
       ctx.fillRect(0, H - 6, W, 6);
+
+      // Convert canvas to img for WeChat long-press save
+      var posterImg = document.getElementById('posterImg');
+      posterImg.src = canvas.toDataURL('image/png');
+      posterImg.style.display = 'block';
+      canvas.style.display = 'none';
     }
 
     siteQr.onload = function () { qrLoaded[0] = true; drawQrs(); };
