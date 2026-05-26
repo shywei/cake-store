@@ -184,36 +184,6 @@ input, textarea, select, button { font-family: inherit; }
 
 .admin-logout:active { background: var(--cream-dark); }
 
-/* Stats */
-.stats {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 20px 20px 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-}
-
-.stat-card {
-  background: var(--white);
-  border-radius: var(--radius);
-  padding: 16px;
-  text-align: center;
-  box-shadow: var(--shadow);
-}
-
-.stat-num {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--green);
-}
-
-.stat-label {
-  font-size: 11px;
-  color: var(--text-light);
-  margin-top: 2px;
-}
-
 /* Action bar */
 .action-bar {
   max-width: 640px;
@@ -391,6 +361,8 @@ input, textarea, select, button { font-family: inherit; }
 .admin-card-btn:active { transform: scale(0.9); }
 
 .admin-card-btn.edit { background: var(--green-light); color: var(--green); }
+.admin-card-btn.up,
+.admin-card-btn.down { background: var(--cream-dark); color: var(--brown); font-size: 12px; }
 .admin-card-btn.delete { background: #FDE8E4; color: var(--red); }
 
 /* Empty admin state */
@@ -714,7 +686,7 @@ input, textarea, select, button { font-family: inherit; }
 
 @media (min-width: 480px) {
   .admin-card-img { width: 120px; }
-  .admin-header-inner, .stats, .action-bar, .cake-list { max-width: 640px; }
+  .admin-header-inner, .action-bar, .cake-list { max-width: 640px; }
 }
 </style>
 </head>
@@ -749,20 +721,7 @@ input, textarea, select, button { font-family: inherit; }
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-num" id="statTotal">0</div>
-      <div class="stat-label">全部蛋糕</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="statCategories">0</div>
-      <div class="stat-label">蛋糕分类</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="statLowest">¥0</div>
-      <div class="stat-label">起售价</div>
-    </div>
-  </div>
+
 
   <div class="action-bar">
     <button class="btn-primary" id="addBtn">＋ 新增蛋糕</button>
@@ -1006,24 +965,32 @@ async function uploadImageToStorage(file) {
   return urlResult.data.publicUrl;
 }
 
+async function moveCake(id, direction) {
+  var cakes = await fetchCakes();
+  var idx = cakes.findIndex(function (c) { return c.id === id; });
+  if (idx === -1) return;
+  var targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (targetIdx < 0 || targetIdx >= cakes.length) return;
+  var current = cakes[idx];
+  var target = cakes[targetIdx];
+  var tempSort = current.sort_order;
+  showLoading();
+  var r1 = await sb.from('cakes').update({ sort_order: target.sort_order }).eq('id', current.id);
+  var r2 = await sb.from('cakes').update({ sort_order: tempSort }).eq('id', target.id);
+  hideLoading();
+  if (!r1.error && !r2.error) {
+    await loadAndRender();
+  } else {
+    showToast('排序失败，请重试');
+  }
+}
+
 // ----- Render -----
 async function loadAndRender() {
   showLoading();
   var cakes = await fetchCakes();
-  renderStats(cakes);
   renderCakeList(cakes);
   hideLoading();
-}
-
-function renderStats(cakes) {
-  document.getElementById('statTotal').textContent = cakes.length;
-  var cats = [];
-  cakes.forEach(function (c) {
-    if (c.category && cats.indexOf(c.category) === -1) cats.push(c.category);
-  });
-  document.getElementById('statCategories').textContent = cats.length;
-  var prices = cakes.map(function (c) { return c.price; }).filter(function (p) { return p > 0; });
-  document.getElementById('statLowest').textContent = prices.length ? '¥' + Math.min.apply(null, prices) : '¥0';
 }
 
 function renderCakeList(cakes) {
@@ -1036,7 +1003,7 @@ function renderCakeList(cakes) {
     return;
   }
 
-  cakeList.innerHTML = cakes.map(function (cake) {
+  cakeList.innerHTML = cakes.map(function (cake, i) {
     return '<div class="admin-card">' +
       (cake.image_url
         ? '<img class="admin-card-img" src="' + cake.image_url + '" alt="' + cake.name + '" onerror="this.outerHTML=\'<div class=\\\\\'admin-card-img-placeholder\\\\\'>🎂</div>\'">'
@@ -1049,11 +1016,29 @@ function renderCakeList(cakes) {
       '<div class="admin-card-desc">' + (cake.description || '') + '</div>' +
       '</div>' +
       '<div class="admin-card-actions">' +
+      '<button class="admin-card-btn up"' + (i === 0 ? ' style="opacity:0.2;pointer-events:none"' : '') + ' data-id="' + cake.id + '" title="上移">⬆️</button>' +
+      '<button class="admin-card-btn down"' + (i === cakes.length - 1 ? ' style="opacity:0.2;pointer-events:none"' : '') + ' data-id="' + cake.id + '" title="下移">⬇️</button>' +
       '<button class="admin-card-btn edit" data-id="' + cake.id + '" title="编辑">✏️</button>' +
       '<button class="admin-card-btn delete" data-id="' + cake.id + '" title="删除">🗑️</button>' +
       '</div>' +
       '</div>';
   }).join('');
+
+  Array.from(document.querySelectorAll('.admin-card-btn.up:not([style*=\"pointer-events:none\"])')).forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = parseInt(btn.getAttribute('data-id'));
+      moveCake(id, 'up');
+    });
+  });
+
+  Array.from(document.querySelectorAll('.admin-card-btn.down:not([style*=\"pointer-events:none\"])')).forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = parseInt(btn.getAttribute('data-id'));
+      moveCake(id, 'down');
+    });
+  });
 
   Array.from(document.querySelectorAll('.admin-card-btn.edit')).forEach(function (btn) {
     btn.addEventListener('click', function (e) {
