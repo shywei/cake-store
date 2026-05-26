@@ -792,9 +792,12 @@ input, textarea, select, button { font-family: inherit; }
       </select>
     </div>
 
+
     <div class="form-group">
-      <label class="form-label">价格 (元)</label>
-      <input class="form-input" id="formPrice" type="number" min="0" step="0.01" placeholder="留空则显示咨询价">
+      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="formPromoted" style="width:16px;height:16px;accent-color:var(--green)">
+        <span>当季主推 🏆</span>
+      </label>
     </div>
 
     <div class="form-group">
@@ -818,12 +821,10 @@ input, textarea, select, button { font-family: inherit; }
       <label class="form-label">描述</label>
       <textarea class="form-textarea" id="formDesc" placeholder="描述蛋糕的特色、口味、食材..." maxlength="200"></textarea>
     </div>
-
+	
     <div class="form-group">
-      <label class="form-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="formPromoted" style="width:16px;height:16px;accent-color:var(--green)">
-        <span>当季主推 🏆</span>
-      </label>
+      <label class="form-label">价格 (元)</label>
+      <input class="form-input" id="formPrice" type="number" min="0" step="0.01" placeholder="留空则显示咨询价">
     </div>
 
     <div class="form-group">
