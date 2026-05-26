@@ -616,9 +616,6 @@ a { text-decoration: none; color: inherit; }
       <div class="nav-brand-icon">🌸</div>
       <span class="nav-brand-text">小胖私家烘焙</span>
     </div>
-    <button class="nav-admin" onclick="location.href='admin.html'" aria-label="管理">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-    </button>
   </div>
 </nav>
 
@@ -676,6 +673,24 @@ a { text-decoration: none; color: inherit; }
 // ============================================================
 var SUPABASE_URL = 'https://qcqobpckzceysdxyaryu.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_NmfkvrcpFSQuLjqB4Gbsng_Mp0sEcqL';
+
+// ============================================================
+// 浏览器检测 —— 仅支持微信内和手机浏览器，阻止 PC 端访问
+// ============================================================
+var ua = navigator.userAgent.toLowerCase();
+var isWechat = ua.indexOf('micromessenger') !== -1;
+var isMobile = /android|iphone|ipad|ipod|phone|mobile|blackberry|iemobile|opera mini|webos/i.test(ua);
+var isPc = (!isMobile && !isWechat);
+
+if (isPc) {
+  document.body.innerHTML =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;background:#FDF8F2;color:#3D3D3D;font-family:sans-serif;text-align:center;">' +
+    '<div style="font-size:64px;margin-bottom:16px;">📱</div>' +
+    '<h1 style="font-size:20px;font-weight:600;margin-bottom:8px;">请在手机上打开</h1>' +
+    '<p style="font-size:14px;color:#8A8A8A;line-height:1.8;max-width:280px;">请用微信或手机浏览器扫描二维码访问本页面</p>' +
+    '</div>';
+  throw new Error('PC browser not allowed');
+}
 
 // ============================================================
 
