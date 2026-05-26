@@ -188,23 +188,26 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* Categories */
-.categories {
+.categories-wrap {
+  position: relative;
   max-width: 480px;
   margin: 0 auto;
+}
+
+.categories {
   padding: 0 20px 24px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  position: relative;
 }
 
 .categories::-webkit-scrollbar { display: none; }
 
-.categories::after {
+.categories-wrap::after {
   content: '→';
   position: absolute;
   top: 0;
-  right: 0;
+  right: 20px;
   width: 56px;
   height: 100%;
   background: linear-gradient(to right, transparent, var(--cream));
@@ -223,7 +226,7 @@ a { text-decoration: none; color: inherit; }
   50% { opacity: 1; transform: translateX(3px); }
 }
 
-.categories.at-end::after {
+.categories-wrap.at-end::after {
   opacity: 0;
   animation: none;
 }
@@ -736,8 +739,10 @@ a { text-decoration: none; color: inherit; }
   </div>
 </section>
 
-<div class="categories" id="categories">
-  <div class="categories-inner" id="categoryList"></div>
+<div class="categories-wrap">
+  <div class="categories" id="categories">
+    <div class="categories-inner" id="categoryList"></div>
+  </div>
 </div>
 
 <div class="cake-grid" id="cakeGrid">
@@ -1014,12 +1019,13 @@ function showToast(msg) {
 }
 
 // Categories scroll fade
-var catScroll = document.querySelector('.categories');
+var catScroll = document.getElementById('categories');
+var catWrap = catScroll.parentElement;
 function checkCatScroll() {
   if (catScroll.scrollLeft + catScroll.clientWidth >= catScroll.scrollWidth - 5) {
-    catScroll.classList.add('at-end');
+    catWrap.classList.add('at-end');
   } else {
-    catScroll.classList.remove('at-end');
+    catWrap.classList.remove('at-end');
   }
 }
 catScroll.addEventListener('scroll', checkCatScroll);
