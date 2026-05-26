@@ -21,6 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
 :root {
   --green: #7A9E7E;
@@ -125,6 +126,22 @@ a { text-decoration: none; color: inherit; }
 }
 
 .nav-admin:active { background: var(--cream-dark); }
+
+.nav-share {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--green);
+  background: var(--green-light);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: var(--transition);
+}
+
+.nav-share:active { transform: scale(0.92); }
 
 /* Hero */
 .hero {
@@ -418,6 +435,159 @@ a { text-decoration: none; color: inherit; }
 .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
 .empty-state-text { font-size: 14px; }
 
+/* Share Action Sheet */
+.share-sheet-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 998;
+  background: rgba(0,0,0,0.4);
+}
+
+.share-sheet-overlay.open {
+  display: block;
+}
+
+.share-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--cream);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
+  animation: sheet-up 0.3s ease;
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.share-sheet-title {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.share-sheet-options {
+  display: flex;
+  gap: 16px;
+}
+
+.share-sheet-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--white);
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
+}
+
+.share-sheet-btn:active {
+  transform: scale(0.96);
+  background: var(--cream-dark);
+}
+
+.share-sheet-icon {
+  font-size: 28px;
+}
+
+.share-sheet-label {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.share-sheet-cancel {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  color: var(--text-light);
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.share-sheet-cancel:active {
+  background: var(--cream-dark);
+}
+
+/* Share Poster */
+.poster-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: rgba(0,0,0,0.6);
+  align-items: center;
+  justify-content: center;
+}
+
+.poster-overlay.open {
+  display: flex;
+}
+
+.poster-container {
+  max-width: 340px;
+  width: 85%;
+  text-align: center;
+}
+
+.poster-img-wrap {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+}
+
+.poster-img-wrap canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+.poster-hint {
+  color: rgba(255,255,255,0.8);
+  font-size: 12px;
+  margin: 16px 0 12px;
+}
+
+.poster-close {
+  padding: 10px 40px;
+  border: none;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.poster-close:active {
+  background: rgba(255,255,255,0.35);
+}
+
 /* Error state */
 .error-state {
   grid-column: 1 / -1;
@@ -547,15 +717,47 @@ a { text-decoration: none; color: inherit; }
 
 .modal-carousel-count {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: 12px;
+  right: 12px;
   background: rgba(0,0,0,0.45);
   color: white;
   font-size: 11px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border-radius: 10px;
   font-weight: 500;
-  pointer-events: none;
+  letter-spacing: 0.5px;
+}
+
+.modal-marquee {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  overflow: hidden;
+  background: linear-gradient(to right, rgba(0,0,0,0.65), rgba(0,0,0,0.5));
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-marquee-track {
+  display: flex;
+  line-height: 32px;
+  font-size: 12px;
+  color: #fff;
+  animation: marquee-scroll 18s linear infinite;
+  width: fit-content;
+}
+
+.modal-marquee-track span {
+  flex-shrink: 0;
+  padding: 0 20px;
+  white-space: nowrap;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .modal-name {
@@ -726,6 +928,7 @@ a { text-decoration: none; color: inherit; }
       <div class="nav-brand-icon">🌸</div>
       <span class="nav-brand-text">小胖私家烘焙</span>
     </div>
+    <button class="nav-share" id="shareBtn" title="分享">📤</button>
   </div>
 </nav>
 
@@ -768,6 +971,9 @@ a { text-decoration: none; color: inherit; }
     <div class="modal-carousel" id="modalCarousel">
       <div class="modal-carousel-track" id="carouselTrack"></div>
       <span class="modal-carousel-count" id="carouselCount">1/1</span>
+      <div class="modal-marquee" id="modalMarquee">
+        <div class="modal-marquee-track" id="marqueeTrack"></div>
+      </div>
     </div>
     <div class="modal-carousel-dots" id="carouselDots"></div>
     <h2 class="modal-name" id="modalName"></h2>
@@ -997,6 +1203,22 @@ function showModal(cake) {
   document.getElementById('modalName').textContent = cake.name;
   document.getElementById('modalPrice').innerHTML = formatPrice(cake.price);
   document.getElementById('modalDesc').textContent = cake.description || '';
+
+  // Marquee notices
+  var marqueeTrack = document.getElementById('marqueeTrack');
+  var marqueeEl = document.getElementById('modalMarquee');
+  if (cake.notices && cake.notices.trim()) {
+    var items = cake.notices.split('\n').filter(Boolean);
+    var text = items.join('　●　');
+    marqueeTrack.innerHTML = '<span>' + text + '</span><span>' + text + '</span>';
+    marqueeEl.style.display = '';
+    marqueeTrack.style.animation = 'none';
+    marqueeTrack.offsetHeight;
+    marqueeTrack.style.animation = '';
+  } else {
+    marqueeEl.style.display = 'none';
+  }
+
   modalOverlay.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1017,6 +1239,179 @@ function showToast(msg) {
   clearTimeout(toast._timer);
   toast._timer = setTimeout(function () { toast.classList.remove('show'); }, 2000);
 }
+
+// ----- Share Poster -----
+var posterOverlay = document.getElementById('posterOverlay');
+var posterCanvas = document.getElementById('posterCanvas');
+
+function showPoster() {
+  posterOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  generatePoster();
+}
+
+function hidePoster() {
+  posterOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function generatePoster() {
+  var W = 600, H = 900;
+  var canvas = posterCanvas;
+  canvas.width = W;
+  canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#FDF8F2';
+  ctx.fillRect(0, 0, W, H);
+
+  // Decorative top line
+  ctx.fillStyle = '#7A9E7E';
+  ctx.fillRect(0, 0, W, 6);
+
+  // Shop name
+  ctx.fillStyle = '#5A7E5E';
+  ctx.font = 'bold 40px "Noto Serif SC", serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('小胖私家烘焙', W / 2, 80);
+
+  // Divider
+  ctx.strokeStyle = '#E8F0E6';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(120, 105);
+  ctx.lineTo(W - 120, 105);
+  ctx.stroke();
+
+  // Cover image
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&q=80';
+  img.onload = function () {
+    var iw = img.width, ih = img.height;
+    var cw = 480, ch = 320;
+    var sx = Math.max(0, (iw - cw * ih / ch) / 2);
+    var sy = 0;
+    var sw = iw;
+    var sh = ih;
+    if (iw / ih > cw / ch) {
+      sw = cw * ih / ch;
+      sx = (iw - sw) / 2;
+    } else {
+      sh = ch * iw / cw;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, 60, 140, cw, ch);
+
+    // Tagline
+    ctx.fillStyle = '#7A9E7E';
+    ctx.font = '18px "Noto Sans SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('进口动物奶油 · 纯手工 · 来图定制', W / 2, 530);
+
+    // Separator
+    ctx.strokeStyle = '#E8F0E6';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(200, 555);
+    ctx.lineTo(W - 200, 555);
+    ctx.stroke();
+
+    // QR code
+    var qrSize = 160;
+    var qrX = (W - qrSize) / 2;
+    var qrY = 585;
+    var qrContainer = document.createElement('div');
+    qrContainer.style.position = 'absolute';
+    qrContainer.style.left = '-9999px';
+    document.body.appendChild(qrContainer);
+    var qr = new QRCode(qrContainer, {
+      text: 'https://cake-store-53i.pages.dev',
+      width: qrSize,
+      height: qrSize,
+      colorDark: '#3D3D3D',
+      colorLight: '#FDF8F2',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    setTimeout(function () {
+      var qrImg = qrContainer.querySelector('img');
+      if (qrImg) {
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      }
+      document.body.removeChild(qrContainer);
+
+      // QR hint
+      ctx.fillStyle = '#8A8A8A';
+      ctx.font = '14px "Noto Sans SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('扫码查看更多款式', W / 2, qrY + qrSize + 28);
+
+      // WeChat ID
+      ctx.fillStyle = '#3D3D3D';
+      ctx.font = '18px "Noto Sans SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('y15252681059', W / 2, qrY + qrSize + 70);
+
+      // WeChat hint
+      ctx.fillStyle = '#E8A090';
+      ctx.font = '14px "Noto Sans SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('添加老板微信', W / 2, qrY + qrSize + 94);
+
+      // Bottom decorative line
+      ctx.fillStyle = '#7A9E7E';
+      ctx.fillRect(0, H - 6, W, 6);
+    }, 100);
+  };
+  img.onerror = function () {
+    // Fallback: draw a placeholder
+    ctx.fillStyle = '#E8F0E6';
+    ctx.fillRect(60, 140, 480, 320);
+    ctx.fillStyle = '#7A9E7E';
+    ctx.font = '20px "Noto Sans SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🍰', W / 2, 290);
+  };
+}
+
+// ----- Share Sheet -----
+var shareSheet = document.getElementById('shareSheet');
+
+function showShareSheet() {
+  shareSheet.classList.add('open');
+}
+
+function hideShareSheet() {
+  shareSheet.classList.remove('open');
+}
+
+document.getElementById('shareBtn').addEventListener('click', showShareSheet);
+
+document.getElementById('shareCopyLink').addEventListener('click', function () {
+  var input = document.createElement('input');
+  input.value = 'https://cake-store-53i.pages.dev';
+  document.body.appendChild(input);
+  input.select();
+  document.execCommand('copy');
+  document.body.removeChild(input);
+  hideShareSheet();
+  showToast('链接已复制 📋');
+});
+
+document.getElementById('shareGeneratePoster').addEventListener('click', function () {
+  hideShareSheet();
+  showPoster();
+});
+
+shareSheet.querySelector('.share-sheet-cancel').addEventListener('click', hideShareSheet);
+shareSheet.addEventListener('click', function (e) {
+  if (e.target === shareSheet) hideShareSheet();
+});
+
+document.getElementById('posterClose').addEventListener('click', hidePoster);
+posterOverlay.addEventListener('click', function (e) {
+  if (e.target === posterOverlay) hidePoster();
+});
 
 // Categories scroll fade
 var catScroll = document.getElementById('categories');
@@ -1039,5 +1434,34 @@ loadCakes().then(function (cakes) {
   setTimeout(checkCatScroll, 200);
 });
 </script>
+
+<!-- Share Action Sheet -->
+<div class="share-sheet-overlay" id="shareSheet">
+  <div class="share-sheet">
+    <div class="share-sheet-title">分享店铺</div>
+    <div class="share-sheet-options">
+      <button class="share-sheet-btn" id="shareCopyLink">
+        <span class="share-sheet-icon">🔗</span>
+        <span class="share-sheet-label">复制链接</span>
+      </button>
+      <button class="share-sheet-btn" id="shareGeneratePoster">
+        <span class="share-sheet-icon">🖼️</span>
+        <span class="share-sheet-label">生成海报</span>
+      </button>
+    </div>
+    <button class="share-sheet-cancel">取消</button>
+  </div>
+</div>
+
+<!-- Share Poster Overlay -->
+<div class="poster-overlay" id="posterOverlay">
+  <div class="poster-container">
+    <div class="poster-img-wrap">
+      <canvas id="posterCanvas"></canvas>
+    </div>
+    <p class="poster-hint">长按图片保存到手机</p>
+    <button class="poster-close" id="posterClose">关闭</button>
+  </div>
+</div>
 </body>
 </html>

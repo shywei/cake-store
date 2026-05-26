@@ -786,6 +786,12 @@ input, textarea, select, button { font-family: inherit; }
       <label class="form-label">描述</label>
       <textarea class="form-textarea" id="formDesc" placeholder="描述蛋糕的特色、口味、食材..." maxlength="200"></textarea>
     </div>
+
+    <div class="form-group">
+      <label class="form-label">滚动公告（可选）</label>
+      <textarea class="form-textarea" id="formNotices" placeholder="每行一条，如：🍰 下单即享9折优惠" maxlength="200" style="min-height:60px"></textarea>
+      <div class="form-hint">显示在图片底部的滚动文字，每行一条自动轮播，不填则不显示</div>
+    </div>
 	
     <div class="form-group">
       <label class="form-label">价格 (元)</label>
@@ -1107,6 +1113,7 @@ function openAddForm() {
   document.getElementById('formSubcategory').checked = false;
   document.getElementById('formPromoted').checked = false;
   document.getElementById('formDesc').value = '';
+  document.getElementById('formNotices').value = '';
   document.getElementById('formBadge').value = '';
   document.getElementById('formImgUrl').value = '';
   document.getElementById('formEditId').value = '';
@@ -1130,6 +1137,7 @@ async function openEditForm(id) {
   document.getElementById('formSubcategory').checked = !!cake.subcategory;
   document.getElementById('formPromoted').checked = !!cake.promoted;
   document.getElementById('formDesc').value = cake.description || '';
+  document.getElementById('formNotices').value = cake.notices || '';
   document.getElementById('formBadge').value = cake.badge || '';
   document.getElementById('formImgUrl').value = '';
   document.getElementById('formEditId').value = id;
@@ -1152,13 +1160,14 @@ async function handleFormSubmit() {
   var subcategory = document.getElementById('formSubcategory').checked ? '限时特惠' : '';
   var promoted = document.getElementById('formPromoted').checked;
   var description = document.getElementById('formDesc').value.trim();
+  var notices = document.getElementById('formNotices').value.trim();
   var badge = document.getElementById('formBadge').value.trim();
   var images = currentImages.slice();
   var image_url = images.length > 0 ? images[0] : '';
 
   if (!name) { showToast('请输入蛋糕名称'); return; }
 
-  var data = { name: name, price: price, category: category, subcategory: subcategory, promoted: promoted, description: description, badge: badge, image_url: image_url, images: images };
+  var data = { name: name, price: price, category: category, subcategory: subcategory, promoted: promoted, description: description, notices: notices, badge: badge, image_url: image_url, images: images };
   showLoading();
 
   if (editingId) {
@@ -1285,8 +1294,8 @@ async function doRestoreSamples() {
   // 3. Insert samples
   var baseUrl = 'https://images.unsplash.com/photo-';
   var samples = [
-    { name: '莓果森林', price: 0, category: '奶油蛋糕', subcategory: '限时特惠', promoted: true, description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气爆品', image_url: baseUrl + '1565958011703-44f9829ba187?w=400&q=80', images: [baseUrl + '1565958011703-44f9829ba187?w=400&q=80', baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 1 },
-    { name: '日式抹茶千层', price: 0, category: '甜点下午茶', subcategory: '', promoted: true, description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '季节限定', image_url: baseUrl + '1571115177098-24ec42ed204d?w=400&q=80', images: [baseUrl + '1571115177098-24ec42ed204d?w=400&q=80'], sort_order: 2 },
+    { name: '莓果森林', price: 0, category: '奶油蛋糕', subcategory: '限时特惠', promoted: true, description: '新鲜树莓与蓝莓的双重果香，搭配轻盈奶油，酸甜平衡恰到好处', badge: '人气爆品', notices: '🎉 下单即享9折优惠\n🔥 满300减30\n📦 全城免费配送', image_url: baseUrl + '1565958011703-44f9829ba187?w=400&q=80', images: [baseUrl + '1565958011703-44f9829ba187?w=400&q=80', baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 1 },
+    { name: '日式抹茶千层', price: 0, category: '甜点下午茶', subcategory: '', promoted: true, description: '宇治抹茶与细腻奶油层层叠加，微苦回甘的成熟风味', badge: '季节限定', notices: '🍵 抹茶季特惠\n🎋 买千层送抹茶拿铁', image_url: baseUrl + '1571115177098-24ec42ed204d?w=400&q=80', images: [baseUrl + '1571115177098-24ec42ed204d?w=400&q=80'], sort_order: 2 },
     { name: '玫瑰荔枝', price: 0, category: '奶油蛋糕', subcategory: '', promoted: false, description: '食用玫瑰花瓣浸润荔枝果肉，花香与果香交织的浪漫滋味', badge: '', image_url: baseUrl + '1578985545062-69928b1d9587?w=400&q=80', images: [baseUrl + '1578985545062-69928b1d9587?w=400&q=80'], sort_order: 3 },
     { name: '经典提拉米苏', price: 0, category: '甜点下午茶', subcategory: '', promoted: true, description: '马斯卡彭芝士与浓缩咖啡的意式经典，入口即化的丝滑享受', badge: '', image_url: baseUrl + '1556217477-d325251ece38?w=400&q=80', images: [baseUrl + '1556217477-d325251ece38?w=400&q=80'], sort_order: 4 },
     { name: '柠檬天使', price: 0, category: '甜点下午茶', subcategory: '', promoted: false, description: '清新柠檬凝乳搭配松软天使蛋糕，夏日里的一抹清凉', badge: '新品推荐', image_url: baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80', images: [baseUrl + '1464349095431-e9a21285b5f3?w=400&q=80'], sort_order: 5 },
